@@ -1,0 +1,41 @@
+{
+  "name": "test-fixture-factory",
+  "version": "1.0.0",
+  "description": "A minimal library for creating and managing test fixtures using Vitest, enabling structured, repeatable, and efficient testing processes.",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest --watch=false",
+    "tidy": "biome check --fix --unsafe",
+    "tsc": "tsc"
+  },
+  "keywords": [
+    "dependency-management",
+    "factory",
+    "fixture",
+    "javascript",
+    "lifecycle-management",
+    "mocking",
+    "test",
+    "test-automation",
+    "test-data",
+    "test-factory",
+    "test-fixtures",
+    "testing",
+    "typescript",
+    "unit-testing",
+    "vitest",
+    "zero-dependencies"
+  ],
+  "author": {
+    "name": "George Czabania"
+  },
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "tsup": "8.3.5",
+    "typescript": "5.7.2",
+    "vitest": "2.1.6"
+  }
+}
