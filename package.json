@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "A minimal library for creating and managing test fixtures using Vitest, enabling structured, repeatable, and efficient testing processes.",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsup",
     "test": "vitest --watch=false",
     "tidy": "biome check --fix --unsafe",
-    "tsc": "tsc"
+    "tsc": "tsc --incremental"
   },
   "keywords": [
     "dependency-management",
