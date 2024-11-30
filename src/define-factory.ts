@@ -12,7 +12,7 @@ const defineFactory = <Deps, Attrs, Value>(
     defineFixture(factoryFn, async (deps, use) => {
       const destroyList: DestroyFn[] = []
 
-      const createOrganizationFn: CreateFn<Attrs, Value> = async (attrs) => {
+      const createFn: CreateFn<Attrs, Value> = async (attrs) => {
         const { value, destroy } = await factoryFn(deps, attrs)
         if (destroy) {
           destroyList.push(destroy)
@@ -20,7 +20,7 @@ const defineFactory = <Deps, Attrs, Value>(
         return value
       }
 
-      await use(createOrganizationFn)
+      await use(createFn)
 
       for (const destroy of destroyList) {
         await destroy()

@@ -83,19 +83,23 @@ const userFactory = defineFactory<
 Factories can be used to create or directly retrieve values in test functions.
 
 ```typescript
-import { test } from 'vitest';
+import { test as anyTest, expect } from 'vitest';
 
-test('it creates a user', async ({ expect }) => {
-  const createCompany = async () => ({ id: 42 }); // Mocked company creation
-  const company = await createCompany();
+import { userFactory } from './factories/user.js'
+import { companyFactory } from './factories/company.js'
 
-  await userFactory.useCreateFn()({ companyId: company.id }, async (createUser) => {
-    const user = await createUser({ name: 'Alice', age: 30 });
-    expect(user).toMatchObject({
-      companyId: company.id,
-      name: 'Alice',
-      age: 30
-    });
+const test = test.extend({
+    company: companyFactory.useValueFn({}),
+    createUser: userFactory.useCreateFn()
+})
+
+test('it creates a user', async ({ company, createUser }) => {
+  const user = await createUser({ name: 'Alice', age: 30 });
+
+  expect(user).toMatchObject({
+    companyId: company.id,
+    name: 'Alice',
+    age: 30
   });
 });
 ```
@@ -126,15 +130,23 @@ Factories ensure resources are destroyed properly after use. This avoids any res
 ### Basic Example
 
 ```typescript
+import { test, expect } from 'vitest'
+import { defineFactory } from 'test-fixture-factory'
+
 const productFactory = defineFactory(
   async () => ({
     value: { name: 'Widget', price: 99.99 }
   })
 );
 
-test('product factory', async ({ expect }) => {
-  await productFactory.useValueFn({})({}, async (product) => {
-    expect(product).toMatchObject({ name: 'Widget', price: 99.99 });
+const test = test.extend({
+  product: productFactory.useValueFn({})
+})
+
+test('product factory', async ({ product }) => {
+  expect(product).toMatchObject({
+    name: 'Widget',
+    price: 99.99
   });
 });
 ```
