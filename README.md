@@ -1,6 +1,6 @@
 # test-fixture-factory
 
-`test-fixture-factory` is an NPM package designed to streamline the creation and management of test fixtures within TypeScript projects using Vitest. This library leverages structured factory functions to generate test data and manage the lifecycle of these fixtures efficiently, making your tests more organized, repeatable, and maintainable.
+`test-fixture-factory` is an NPM package designed to streamline the creation and management of test fixtures within TypeScript projects using **Vitest**. This library leverages structured factory functions to generate test data and manage the lifecycle of these fixtures efficiently, making your tests more organized, repeatable, and maintainable.
 
 ## Table of Contents
 
@@ -27,18 +27,32 @@ Ensure you have `vitest` set up as your test runner since this package is design
 
 ## Features
 
-- **Define Factories:** Easily define factories for creating fixtures with
-  dependencies and attributes.
-- **Lifecycle Management:** Automatically manage the creation and destruction
-  of test resources.
-- **Integration with Vitest:** Seamlessly integrates with Vitest's testing
-  functions.
+- **Define Factories:** Easily define factories for creating fixtures with dependencies and attributes.
+- **Lifecycle Management:** Automatically manage the creation and destruction of test resources.
+- **Integration with Vitest:** Seamlessly integrates with Vitest's testing functions.
+
+Here’s a brief example illustrating a feature:
+
+```typescript
+import { defineFactory } from 'test-fixture-factory';
+
+const companyFactory = defineFactory(async ({}, attrs: { name: string }) => {
+  const company = await prisma.company.create({
+    name: attrs.name,
+  });
+
+  return {
+    value: company,
+    destroy: async () => {
+      await prisma.company.delete({ where: { id: company.id } });
+    },
+  };
+});
+```
 
 ## Why Use test-fixture-factory?
 
-Testing with accurate and meaningful data is crucial for ensuring that your
-code behaves as expected. `test-fixture-factory` simplifies the process of
-setting up data for tests by providing:
+Testing with accurate and meaningful data is crucial for ensuring that your code behaves as expected. `test-fixture-factory` simplifies the process of setting up data for tests by providing:
 
 - **Simplicity:** Avoid boilerplate code and manually setting up test data.
 - **Consistency:** Ensure that each test runs with predictable and manageable data setup.
@@ -73,7 +87,7 @@ import { defineFactory } from 'test-fixture-factory';
 
 import type { Company } from 'prisma'
 
-type Dependencies = {} // alternatively as `Record<string, unknown>`
+type Dependencies = {}; // Alternatively as `Record<string, unknown>`
 
 type Attributes = {
   name: string
@@ -83,18 +97,18 @@ const companyFactory = defineFactory(
   async ({}: Dependencies, attrs: Attributes): Company => {
     const company = await prisma.company.create({
       name: attrs.name,
-    })
+    });
 
     return {
       value: company,
       destroy: async () => {
-        await prisma.company.delete({ where: { id: company.id } })
+        await prisma.company.delete({ where: { id: company.id } });
       }
-    }
+    };
   });
 
-export const useCompany = companyFactory.useValueFn
-export const useCreateCompany = companyFactory.useCreateFn
+export const useCompany = companyFactory.useValueFn;
+export const useCreateCompany = companyFactory.useCreateFn;
 ```
 
 #### With Dependencies
@@ -110,7 +124,7 @@ type Dependencies = {
 
 type Attributes = {
   name: string
-  email: number
+  email: string
 }
 
 const userFactory = defineFactory(
@@ -120,18 +134,18 @@ const userFactory = defineFactory(
       company: company.id,
       name: attrs.name,
       email: attrs.email,
-    })
+    });
 
     return {
       value: user,
       destroy: async () => {
-        await prisma.user.delete({ where: { id: user.id } })
+        await prisma.user.delete({ where: { id: user.id } });
       }
-    }
+    };
   });
 
-export useUser = userFactory.useValueFn
-export useCreateUser = userFactory.useCreateFn
+export const useUser = userFactory.useValueFn;
+export const useCreateUser = userFactory.useCreateFn;
 ```
 
 ### Using Factories in Tests
@@ -144,14 +158,14 @@ import { test as anyTest, expect } from 'vitest';
 import { useCompany } from './factories/company.js'
 import { useCreateUser } from './factories/user.js'
 
-const test = test.extend({
+const test = anyTest.extend({
     company: useCompany({ name: 'Crinkle' }),
     createUser: useCreateUser()
-})
+});
 
 test('it creates a user', async ({ company, createUser }) => {
   const alice = await createUser({ name: 'Alice', email: 'alice@example.com' });
-  const bob   = await createUser({ name: 'Bob',   email: 'bob@example.com  ' });
+  const bob = await createUser({ name: 'Bob', email: 'bob@example.com' });
 
   expect(alice).toEqual({
     id: expect.any(Number),
@@ -160,7 +174,7 @@ test('it creates a user', async ({ company, createUser }) => {
     email: 'alice@example.com',
   });
 
-  expect(boby).toEqual({
+  expect(bob).toEqual({
     id: expect.any(Number),
     companyId: company.id,
     name: 'Bob',
@@ -176,9 +190,7 @@ test('it creates a user', async ({ company, createUser }) => {
 
 ### Destroying Resources
 
-Factories ensure resources are destroyed properly after use. This avoids any
-residual data that might affect subsequent tests. Each factory can optionally
-specify a `destroy` function to clean up resources.
+Factories ensure resources are destroyed properly after use. This avoids any residual data that might affect subsequent tests. Each factory can optionally specify a `destroy` function to clean up resources.
 
 ## API
 
@@ -186,20 +198,14 @@ specify a `destroy` function to clean up resources.
 
 **Parameters:**
 
-- `factoryFn`: A function that produces the fixture, taking dependencies and
-  attributes, and returns an object containing the value and an optional
-  `destroy` function.
+- `factoryFn`: A function that produces the fixture, taking dependencies and attributes, and returns an object containing the value and an optional `destroy` function.
 
 **Returns:**
 
-- The `defineFactory` function returns the same `factoryFn` that was passed in.
-  However, this function now has extra methods available on it:  `useCreateFn`
-  and `useValueFn`.
+- The `defineFactory` function returns the same `factoryFn` that was passed in. However, this function now has extra methods available on it:  `useCreateFn` and `useValueFn`.
 
-- **`useCreateFn`**: Provides a function to create instances of the fixture
-  with managed lifecycle.
-- **`useValueFn(attrs)`**: Directly retrieves a fixture value, managing the
-  lifecycle automatically.
+- **`useCreateFn`**: Provides a function to create instances of the fixture with managed lifecycle.
+- **`useValueFn(attrs)`**: Directly retrieves a fixture value, managing the lifecycle automatically.
 
 ## License
 
