@@ -9,7 +9,7 @@ describe('useCreateFn', () => {
       Record<string, unknown>,
       Record<string, unknown>,
       { name: string }
-    >(async () => {
+    >(() => {
       const value = {
         name: 'Rosie',
       }
