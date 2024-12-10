@@ -1,6 +1,6 @@
 # test-fixture-factory
 
-`test-fixture-factory` is an NPM package designed to streamline the creation and management of test fixtures within TypeScript projects using **Vitest**. This library leverages structured factory functions to generate test data and manage the lifecycle of these fixtures efficiently, making your tests more organized, repeatable, and maintainable.
+`test-fixture-factory` is an NPM package designed to streamline the creation and management of test fixtures within TypeScript projects using **Vitest** [Test Contexts](https://vitest.dev/guide/test-context.html). This library leverages structured factory functions to generate test data and manage the lifecycle of these fixtures efficiently, making your tests more organized, repeatable, and maintainable.
 
 ## Table of Contents
 
@@ -151,6 +151,8 @@ export const useCreateUser = userFactory.useCreateFn;
 ### Using Factories in Tests
 
 Factories can be used to create or directly retrieve values in test functions.
+Dependencies such as `company` in the example below are automatically passed into factory functions
+through Vitest's [Fixture Initialization](https://vitest.dev/guide/test-context.html#fixture-initialization).
 
 ```typescript
 import { test as anyTest, expect } from 'vitest';
@@ -191,6 +193,7 @@ test('it creates a user', async ({ company, createUser }) => {
 ### Destroying Resources
 
 Factories ensure resources are destroyed properly after use. This avoids any residual data that might affect subsequent tests. Each factory can optionally specify a `destroy` function to clean up resources.
+Since `destroy` is called in the reverse order of fixture definition, this should avoid any dependency conflicts (e.g. mandatory foreign key relationships in database tables).
 
 ## API
 
