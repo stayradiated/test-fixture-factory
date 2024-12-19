@@ -1,7 +1,7 @@
 type DestroyFn = () => Promise<void>
 
 type VitestFixtureFn<Deps, Value> = (
-  deps: Deps,
+  deps: Record<string, unknown> & Deps,
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
 
