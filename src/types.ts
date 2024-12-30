@@ -22,4 +22,15 @@ type Factory<Deps, Attrs, Value> = FactoryInputFn<Deps, Attrs, Value> & {
   useValueFn: (attrs: Attrs) => VitestFixtureFn<Deps, Value>
 }
 
-export type { VitestFixtureFn, FactoryInputFn, Factory, DestroyFn, CreateFn }
+type InferCreateFn<T> = T extends () => VitestFixtureFn<infer Deps, infer Value>
+  ? Value
+  : never
+
+export type {
+  VitestFixtureFn,
+  FactoryInputFn,
+  Factory,
+  DestroyFn,
+  CreateFn,
+  InferCreateFn,
+}
