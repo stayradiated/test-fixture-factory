@@ -15,11 +15,29 @@ type FactoryInputFn<Deps, Attrs, Value> = (
   attrs: Attrs,
 ) => Promise<FactoryOutput<Value>> | FactoryOutput<Value>
 
+type FactoryOptions = {
+  // if true, the factory will destroy the created values after the test
+  // defaults to true, unless TFF_SKIP_DESTROY env var is set
+  shouldDestroy?: boolean
+}
+
 type CreateFn<Attrs, Value> = (attrs: Attrs) => Promise<Value>
 
 type Factory<Deps, Attrs, Value> = FactoryInputFn<Deps, Attrs, Value> & {
-  useCreateFn: () => VitestFixtureFn<Deps, CreateFn<Attrs, Value>>
-  useValueFn: (attrs: Attrs) => VitestFixtureFn<Deps, Value>
+  useCreateFn: (
+    options?: FactoryOptions,
+  ) => VitestFixtureFn<Deps, CreateFn<Attrs, Value>>
+  useValueFn: (
+    attrs: Attrs,
+    options?: FactoryOptions,
+  ) => VitestFixtureFn<Deps, Value>
 }
 
-export type { VitestFixtureFn, FactoryInputFn, Factory, DestroyFn, CreateFn }
+export type {
+  VitestFixtureFn,
+  FactoryInputFn,
+  Factory,
+  DestroyFn,
+  CreateFn,
+  FactoryOptions,
+}
