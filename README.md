@@ -195,14 +195,14 @@ test('it creates a user', async ({ company, createUser }) => {
 ```typescript
 import { test as anyTest, expect } from "vitest";
 
-import { InferCreateFn } from "test-fixture-factory";
+import { InferFixtureValue } from "test-fixture-factory";
 import { useCompany } from "./factories/company.js";
 import { useCreateUser } from "./factories/user.js";
 
 const createFixtures = async ({
   createUser,
 }: {
-  createUser: InferCreateFn<typeof useCreateUser>;
+  createUser: InferFixtureValue<typeof useCreateUser>;
 }) => {
   const alice = await createUser({ name: "Alice", email: "alice@example.com" });
   const bob = await createUser({ name: "Bob", email: "bob@example.com" });
