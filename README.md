@@ -190,6 +190,42 @@ test('it creates a user', async ({ company, createUser }) => {
 });
 ```
 
+### Reusing Fixtures
+
+```typescript
+import { test as anyTest, expect } from "vitest";
+
+import { InferCreateFn } from "test-fixture-factory";
+import { useCompany } from "./factories/company.js";
+import { useCreateUser } from "./factories/user.js";
+
+const createFixtures = async ({
+  createUser,
+}: {
+  createUser: InferCreateFn<typeof useCreateUser>;
+}) => {
+  const alice = await createUser({ name: "Alice", email: "alice@example.com" });
+  const bob = await createUser({ name: "Bob", email: "bob@example.com" });
+
+  return { alice, bob };
+};
+
+const test = anyTest.extend({
+  company: useCompany(),
+  createUser: useCreateUser(),
+});
+
+test("tests something", async ({ company, createUser }) => {
+  const { alice, bob } = await createFixtures({ createUser });
+  // ...
+});
+
+test("tests something else", async ({ company, createUser }) => {
+  const { alice, bob } = await createFixtures({ createUser });
+  // ...
+});
+```
+
 ### Destroying Resources
 
 Factories ensure resources are destroyed properly after use. This avoids any residual data that might affect subsequent tests. Each factory can optionally specify a `destroy` function to clean up resources.

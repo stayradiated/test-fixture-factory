@@ -33,11 +33,16 @@ type Factory<Deps, Attrs, Value> = FactoryInputFn<Deps, Attrs, Value> & {
   ) => VitestFixtureFn<Deps, Value>
 }
 
+type InferCreateFn<T> = T extends () => VitestFixtureFn<infer Deps, infer Value>
+  ? Value
+  : never
+
 export type {
   VitestFixtureFn,
   FactoryInputFn,
   Factory,
   DestroyFn,
   CreateFn,
+  InferCreateFn,
   FactoryOptions,
 }
