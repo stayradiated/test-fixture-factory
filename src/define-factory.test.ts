@@ -1,119 +1,82 @@
 import { describe, test } from 'vitest'
 import { defineFactory } from './define-factory.js'
 
+const createFactory = () => {
+  const state = {
+    isDestroyed: false,
+  }
+
+  const factory = defineFactory<
+    { name?: string; accountId?: number },
+    { name?: string; accountId?: number },
+    { name: string; accountId: number }
+  >(({ name, accountId }, attrs) => {
+    const value = {
+      name: name ?? attrs.name ?? 'Rosie',
+      accountId: accountId ?? attrs.accountId ?? 1,
+    }
+    return {
+      value,
+      destroy: async () => {
+        state.isDestroyed = true
+      },
+    }
+  })
+
+  return {
+    factory,
+    state,
+  }
+}
+
 describe('useCreateFn', () => {
   test('without dependencies or attributes', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      Record<string, unknown>,
-      Record<string, unknown>,
-      { name: string }
-    >(() => {
-      const value = {
-        name: 'Rosie',
-      }
-      return {
-        value,
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useCreate = factory.useCreateFn()
 
     await useCreate({}, async (create) => {
       const result = await create({})
-      expect(result).toStrictEqual({ name: 'Rosie' })
+      expect(result).toStrictEqual({ name: 'Rosie', accountId: 1 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with dependencies', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      { name: string },
-      Record<string, unknown>,
-      { name: string }
-    >(async ({ name }) => {
-      const value = {
-        name,
-      }
-      return {
-        value,
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useCreate = factory.useCreateFn()
 
-    await useCreate({ name: 'Gregg' }, async (create) => {
+    await useCreate({ name: 'Gregg', accountId: 33 }, async (create) => {
       const result = await create({})
-      expect(result).toStrictEqual({ name: 'Gregg' })
+      expect(result).toStrictEqual({ name: 'Gregg', accountId: 33 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with attributes', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      Record<string, unknown>,
-      { name: string },
-      { name: string }
-    >(async (_deps, { name }) => {
-      const value = {
-        name,
-      }
-      return {
-        value,
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useCreate = factory.useCreateFn()
 
     await useCreate({}, async (create) => {
-      const result = await create({ name: 'Joseph' })
-      expect(result).toStrictEqual({ name: 'Joseph' })
+      const result = await create({ name: 'Joseph', accountId: 42 })
+      expect(result).toStrictEqual({ name: 'Joseph', accountId: 42 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with dependencies and attributes', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      { accountId: number },
-      { name: string },
-      { accountId: number; name: string }
-    >(async ({ accountId }, { name }) => {
-      const value = {
-        accountId,
-        name,
-      }
-      return {
-        value,
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useCreate = factory.useCreateFn()
 
@@ -121,128 +84,101 @@ describe('useCreateFn', () => {
       const result = await create({ name: 'Josephine' })
       expect(result).toStrictEqual({ name: 'Josephine', accountId: 27 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('should not destroy values if shouldDestroy is false', async ({
+    expect,
+  }) => {
+    const { factory, state } = createFactory()
+
+    const useCreate = factory.useCreateFn({ shouldDestroy: false })
+
+    await useCreate({}, async (create) => {
+      const result = await create({})
+      expect(result).toStrictEqual({ name: 'Rosie', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    // should not be destroyed
+    expect(state.isDestroyed).toBe(false)
   })
 })
 
 describe('useValueFn', () => {
   test('without dependencies or attributes', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      Record<string, never>,
-      Record<string, never>,
-      { name: string }
-    >(async () => {
-      return {
-        value: {
-          name: 'Samuel',
-        },
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useValue = factory.useValueFn({})
 
     await useValue({}, async (value) => {
-      expect(value).toStrictEqual({ name: 'Samuel' })
-      expect(isDestroyed).toBe(false)
+      expect(value).toStrictEqual({ name: 'Rosie', accountId: 1 })
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with dependencies', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      { name: string },
-      Record<string, never>,
-      { name: string }
-    >(async ({ name }) => {
-      return {
-        value: {
-          name,
-        },
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useValue = factory.useValueFn({})
 
-    await useValue({ name: 'Hannah' }, async (value) => {
-      expect(value).toStrictEqual({ name: 'Hannah' })
-      expect(isDestroyed).toBe(false)
+    await useValue({ name: 'Hannah', accountId: 27 }, async (value) => {
+      expect(value).toStrictEqual({ name: 'Hannah', accountId: 27 })
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with attributes', async ({ expect }) => {
-    let isDestroyed = false
+    const { factory, state } = createFactory()
 
-    const factory = defineFactory<
-      Record<string, unknown>,
-      { name: string },
-      { name: string }
-    >(async (_deps, { name }) => {
-      const value = {
-        name,
-      }
-      return {
-        value,
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
-
-    const useValue = factory.useValueFn({ name: 'Zachary' })
+    const useValue = factory.useValueFn({ name: 'Zachary', accountId: 99 })
 
     await useValue({}, async (value) => {
-      expect(value).toStrictEqual({ name: 'Zachary' })
+      expect(value).toStrictEqual({ name: 'Zachary', accountId: 99 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
   })
 
   test('with dependencies and attributes', async ({ expect }) => {
-    let isDestroyed = false
-
-    const factory = defineFactory<
-      { accountId: number },
-      { name: string },
-      { accountId: number; name: string }
-    >(async ({ accountId }, { name }) => {
-      return {
-        value: {
-          accountId,
-          name,
-        },
-        destroy: async () => {
-          isDestroyed = true
-        },
-      }
-    })
+    const { factory, state } = createFactory()
 
     const useValue = factory.useValueFn({ name: 'Zoe' })
 
     await useValue({ accountId: 42 }, async (value) => {
       expect(value).toStrictEqual({ name: 'Zoe', accountId: 42 })
 
-      expect(isDestroyed).toBe(false)
+      expect(state.isDestroyed).toBe(false)
     })
 
-    expect(isDestroyed).toBe(true)
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('should not destroy values if shouldDestroy is false', async ({
+    expect,
+  }) => {
+    const { factory, state } = createFactory()
+
+    const useValue = factory.useValueFn({}, { shouldDestroy: false })
+
+    await useValue({}, async (value) => {
+      expect(value).toStrictEqual({ name: 'Rosie', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    // should not be destroyed
+    expect(state.isDestroyed).toBe(false)
   })
 })
 

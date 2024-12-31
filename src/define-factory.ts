@@ -1,6 +1,17 @@
-import type { CreateFn, DestroyFn, Factory, FactoryInputFn } from './types.js'
+import type {
+  CreateFn,
+  DestroyFn,
+  Factory,
+  FactoryInputFn,
+  FactoryOptions,
+} from './types.js'
 
 import { defineFixture } from './define-fixture.js'
+import { SKIP_DESTROY } from './env-var.js'
+
+const defaultFactoryOptions: FactoryOptions = {
+  shouldDestroy: !SKIP_DESTROY,
+}
 
 const defineFactory = <Deps, Attrs, Value>(
   factoryFn: FactoryInputFn<Deps, Attrs, Value>,
@@ -8,7 +19,7 @@ const defineFactory = <Deps, Attrs, Value>(
   // cast input function to a factory, so we can assign additional properties
   const factory = factoryFn as Factory<Deps, Attrs, Value>
 
-  factory.useCreateFn = () =>
+  factory.useCreateFn = (options = defaultFactoryOptions) =>
     defineFixture(factoryFn, async (deps, use) => {
       const destroyList: DestroyFn[] = []
 
@@ -22,16 +33,20 @@ const defineFactory = <Deps, Attrs, Value>(
 
       await use(createFn)
 
-      for (const destroy of destroyList) {
-        await destroy()
+      if (options.shouldDestroy) {
+        for (const destroy of destroyList) {
+          await destroy()
+        }
       }
     })
 
-  factory.useValueFn = (attrs) =>
+  factory.useValueFn = (attrs, options = defaultFactoryOptions) =>
     defineFixture(factoryFn, async (deps, use) => {
       const { value, destroy } = await factoryFn(deps, attrs)
       await use(value)
-      await destroy?.()
+      if (options.shouldDestroy) {
+        await destroy?.()
+      }
     })
 
   return factory
