@@ -34,7 +34,7 @@ type Factory<Deps, Attrs, Value> = FactoryInputFn<Deps, Attrs, Value> & {
 }
 
 type InferFixtureValue<T> = T extends () => VitestFixtureFn<
-  infer Deps,
+  infer _Deps,
   infer Value
 >
   ? Value

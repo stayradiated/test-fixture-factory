@@ -1,3 +1,5 @@
+import { defineFixture } from './define-fixture.js'
+import { SKIP_DESTROY } from './env-var.js'
 import type {
   CreateFn,
   DestroyFn,
@@ -5,9 +7,6 @@ import type {
   FactoryInputFn,
   FactoryOptions,
 } from './types.js'
-
-import { defineFixture } from './define-fixture.js'
-import { SKIP_DESTROY } from './env-var.js'
 
 const defaultFactoryOptions: FactoryOptions = {
   shouldDestroy: !SKIP_DESTROY,
