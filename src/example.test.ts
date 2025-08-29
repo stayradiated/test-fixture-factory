@@ -1,44 +1,40 @@
 import { test as anyTest, describe } from 'vitest'
 import { defineFactory } from './define-factory.js'
-import { UndefinedFieldError } from './undefined-field-error.js'
+import { f } from './field-builder.js'
 
-type AuthorDeps = Record<string, unknown>
 type Author = { id: number; name: string }
-// biome-ignore lint/suspicious/noConfusingVoidType: void is used to indicate optional attributes
-type AuthorAttrs = void | Partial<Author>
 
-const authorFactory = defineFactory<AuthorDeps, AuthorAttrs, Author>(
-  // biome-ignore lint/correctness/noEmptyPattern: vitest requires {}
-  async ({}, attrs) => {
+const authorFactory = defineFactory(
+  'Author',
+  {
+    name: f.type<string>(),
+  },
+  async ({ name }) => {
     const value: Author = {
       id: Math.floor(Math.random() * 1_000_000),
-      name: attrs?.name ?? 'Unknown',
+      name,
     }
 
     return { value }
   },
 )
+
 const { useCreateFn: useCreateAuthor, useValueFn: useAuthor } = authorFactory
 
-type BookDeps = { author?: Pick<Author, 'id'> }
 type Book = { id: number; title: string; authorId: number }
-// biome-ignore lint/suspicious/noConfusingVoidType: void is used to indicate optional attributes
-type BookAttrs = void | Partial<Book>
 
-const bookFactory = defineFactory<BookDeps, BookAttrs, Book>(
-  async ({ author }, attrs) => {
-    const authorId = author?.id ?? attrs?.authorId
-    if (typeof authorId !== 'number') {
-      throw new UndefinedFieldError({
-        factory: 'bookFactory',
-        attribute: 'authorId',
-        dependency: 'author',
-      })
-    }
-
+const bookFactory = defineFactory(
+  'Book',
+  {
+    authorId: f
+      .type<number>()
+      .useContext(({ author }: { author?: Pick<Author, 'id'> }) => author?.id),
+    title: f.type<string>().optional(),
+  },
+  async ({ authorId, title }) => {
     const value: Book = {
       id: Math.floor(Math.random() * 1_000_000),
-      title: attrs?.title ?? 'Unknown',
+      title: title ?? 'Unknown',
       authorId,
     }
     return { value }
@@ -99,31 +95,20 @@ describe('useValue with attributes', () => {
 
 describe('useCreate', () => {
   const test = anyTest.extend({
-    createAuthor: useCreateAuthor(),
+    createAuthor: useCreateAuthor({ name: 'D. Adams' }),
     createBook: useCreateBook(),
   })
 
   test('should create an author', async ({ createAuthor, expect }) => {
-    const author = await createAuthor()
+    const author = await createAuthor({})
     expect(author).toStrictEqual({
       id: expect.any(Number),
-      name: 'Unknown',
-    })
-  })
-
-  test('should create an author with a certain name', async ({
-    createAuthor,
-    expect,
-  }) => {
-    const author = await createAuthor({ name: 'Maxine' })
-    expect(author).toStrictEqual({
-      id: expect.any(Number),
-      name: 'Maxine',
+      name: 'D. Adams',
     })
   })
 
   test('should create a book', async ({ createAuthor, createBook, expect }) => {
-    const author = await createAuthor()
+    const author = await createAuthor({})
 
     const book = await createBook({ authorId: author.id })
     expect(book).toStrictEqual({
@@ -138,7 +123,7 @@ describe('useCreate', () => {
     createBook,
     expect,
   }) => {
-    const author = await createAuthor()
+    const author = await createAuthor({})
 
     const book = await createBook({ title: 'The Book', authorId: author.id })
     expect(book).toStrictEqual({
@@ -151,7 +136,7 @@ describe('useCreate', () => {
 
 describe('useValue + useCreate', () => {
   const test = anyTest.extend({
-    author: useAuthor(),
+    author: useAuthor({ name: 'A. Nonymous' }),
     createBook: useCreateBook(),
   })
 
@@ -166,5 +151,48 @@ describe('useValue + useCreate', () => {
       title: 'Unknown',
       authorId: author.id,
     })
+  })
+})
+
+describe('With missing attributes', () => {
+  const test = anyTest.extend({
+    createBook: useCreateBook(),
+    createAuthor: useCreateAuthor(),
+
+    // NOTE: we do not specify the `author/authorId` attribute here
+    // so using book _will_ fail
+    book: useBook(),
+  })
+
+  test.fails(
+    'should fail when resolving authorId',
+    async ({ book, expect }) => {
+      // NOTE: this test is  never actually run
+      expect(book).toBeUndefined()
+    },
+  )
+
+  test('should fail when resolving createBook().authorId', async ({
+    createBook,
+    expect,
+  }) => {
+    await expect(() =>
+      createBook({ title: 'The Book' }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [Error: [Book] 1 required field(s) have undefined values:
+      - authorId: must be provided as an attribute or via the test context (author)]
+    `)
+  })
+
+  test('should fail when resolving createAuthor().name', async ({
+    createAuthor,
+    expect,
+  }) => {
+    await expect(() =>
+      createAuthor({ name: undefined as unknown as string }),
+    ).rejects.toThrowErrorMatchingInlineSnapshot(`
+      [Error: [Author] 1 required field(s) have undefined values:
+      - name: must be provided as an attribute]
+    `)
   })
 })

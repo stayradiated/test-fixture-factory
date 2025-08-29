@@ -9,7 +9,8 @@
     "build": "tsup",
     "test": "vitest --watch=false",
     "tidy": "biome check --fix --unsafe",
-    "tsc": "tsc --incremental"
+    "tsc": "tsc --incremental",
+    "knip": "knip"
   },
   "keywords": [
     "dependency-management",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
     "@types/node": "24.3.0",
+    "knip": "5.63.0",
     "tsup": "8.5.0",
     "typescript": "5.9.2",
     "vitest": "3.2.4"
