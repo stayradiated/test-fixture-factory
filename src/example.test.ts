@@ -131,20 +131,20 @@ describe('useCreate', () => {
       title: 'Unknown',
       authorId: expect.any(Number),
     })
+  })
 
-    test('should create a book with a certain title', async ({
-      createAuthor,
-      createBook,
-      expect,
-    }) => {
-      const author = await createAuthor()
+  test('should create a book with a certain title', async ({
+    createAuthor,
+    createBook,
+    expect,
+  }) => {
+    const author = await createAuthor()
 
-      const book = await createBook({ title: 'The Book', authorId: author.id })
-      expect(book).toStrictEqual({
-        id: expect.any(Number),
-        title: 'The Book',
-        authorId: expect.any(Number),
-      })
+    const book = await createBook({ title: 'The Book', authorId: author.id })
+    expect(book).toStrictEqual({
+      id: expect.any(Number),
+      title: 'The Book',
+      authorId: expect.any(Number),
     })
   })
 })
