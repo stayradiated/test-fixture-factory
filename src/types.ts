@@ -23,8 +23,14 @@ type FactoryOptions = {
 
 type CreateFn<Attrs, Value> = (attrs: Attrs) => Promise<Value>
 
-type Factory<Deps, Attrs, Value> = FactoryInputFn<Deps, Attrs, Value> & {
+type Factory<
+  Deps extends Record<string, unknown>,
+  // biome-ignore lint/suspicious/noConfusingVoidType: void is used to indicate optional attributes
+  Attrs extends void | Record<string, unknown>,
+  Value,
+> = FactoryInputFn<Deps, Attrs, Value> & {
   useCreateFn: (
+    defaultAttrs?: Partial<Attrs>,
     options?: FactoryOptions,
   ) => VitestFixtureFn<Deps, CreateFn<Attrs, Value>>
   useValueFn: (

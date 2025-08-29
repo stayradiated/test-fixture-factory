@@ -162,18 +162,18 @@ import { useCreateUser } from './factories/user.js'
 
 const test = anyTest.extend({
     company: useCompany({ name: 'Crinkle' }),
-    createUser: useCreateUser()
+    createUser: useCreateUser({ email: 'default@email.com' })
 });
 
 test('it creates a user', async ({ company, createUser }) => {
-  const alice = await createUser({ name: 'Alice', email: 'alice@example.com' });
+  const alice = await createUser({ name: 'Alice' });
   const bob = await createUser({ name: 'Bob', email: 'bob@example.com' });
 
   expect(alice).toEqual({
     id: expect.any(Number),
     companyId: company.id,
     name: 'Alice',
-    email: 'alice@example.com',
+    email: 'default@email.com',
   });
 
   expect(bob).toEqual({
@@ -253,7 +253,7 @@ You can also control cleanup behavior at the factory level using the `shouldDest
 // Disable cleanup for a specific useValueFn call
 const test = anyTest.extend({
   company: useCompany({}, { shouldDestroy: false }),
-  createCompany: useCreateCompany({ shouldDestroy: false })
+  createCompany: useCreateCompany({}, { shouldDestroy: false })
 });
 ```
 
@@ -279,7 +279,7 @@ This granular control is useful when:
 
 - The `defineFactory` function returns the same `factoryFn` that was passed in. However, this function now has extra methods available on it:  `useCreateFn` and `useValueFn`.
 
-- **`useCreateFn`**: Provides a function to create instances of the fixture with managed lifecycle.
+- **`useCreateFn(defaultAttrs?)`**: Provides a function to create instances of the fixture with managed lifecycle.
 - **`useValueFn(attrs)`**: Directly retrieves a fixture value, managing the lifecycle automatically.
 
 ## License

@@ -48,14 +48,14 @@ const { useCreateFn: useCreateBook, useValueFn: useBook } = bookFactory
 
 describe('useValue', () => {
   const test = anyTest.extend({
-    author: useAuthor(),
+    author: useAuthor({ name: 'A. Nonymous' }),
     book: useBook(),
   })
 
   test('should use an author', async ({ author, expect }) => {
     expect(author).toStrictEqual({
       id: expect.any(Number),
-      name: 'Unknown',
+      name: 'A. Nonymous',
     })
   })
 

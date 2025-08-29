@@ -75,6 +75,44 @@ describe('useCreateFn', () => {
     expect(state.isDestroyed).toBe(true)
   })
 
+  test('with default attributes', async ({ expect }) => {
+    const { factory, state } = createFactory()
+
+    const useCreate = factory.useCreateFn({
+      name: 'Joseph',
+      accountId: 1,
+    })
+
+    await useCreate({}, async (create) => {
+      const result = await create({})
+      expect(result).toStrictEqual({ name: 'Joseph', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('with default attributes and attributes', async ({ expect }) => {
+    const { factory, state } = createFactory()
+
+    const useCreate = factory.useCreateFn({
+      name: 'Joseph',
+      accountId: 1,
+    })
+
+    await useCreate({}, async (create) => {
+      const result = await create({
+        name: 'Josephine',
+      })
+      expect(result).toStrictEqual({ name: 'Josephine', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
   test('with dependencies and attributes', async ({ expect }) => {
     const { factory, state } = createFactory()
 
@@ -95,7 +133,7 @@ describe('useCreateFn', () => {
   }) => {
     const { factory, state } = createFactory()
 
-    const useCreate = factory.useCreateFn({ shouldDestroy: false })
+    const useCreate = factory.useCreateFn({}, { shouldDestroy: false })
 
     await useCreate({}, async (create) => {
       const result = await create({})
