@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "prepublishOnly": "$npm_execpath run build",
     "build": "tsup",
     "test": "vitest --watch=false",
     "tidy": "biome check --fix --unsafe",
