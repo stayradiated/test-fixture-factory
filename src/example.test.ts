@@ -29,12 +29,13 @@ const bookFactory = defineFactory(
     authorId: f
       .type<number>()
       .useContext(({ author }: { author?: Pick<Author, 'id'> }) => author?.id),
+    id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
   },
-  async ({ authorId, title }) => {
+  async ({ id, authorId, title }) => {
     const value: Book = {
-      id: Math.floor(Math.random() * 1_000_000),
-      title: title ?? 'Unknown',
+      id,
+      title: title,
       authorId,
     }
     return { value }
