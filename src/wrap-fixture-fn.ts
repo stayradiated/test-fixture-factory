@@ -1,5 +1,6 @@
-import { getFixtureList } from './schema-utils.js'
 import type { AnySchema } from './types.js'
+
+import { getFixtureList } from './schema-utils.js'
 
 // biome-ignore lint/suspicious/noExplicitAny: this is ok
 type AnyFn = (...args: any[]) => any

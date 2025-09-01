@@ -1,12 +1,14 @@
 import { describe, expectTypeOf, test } from 'vitest'
-import { defineFactory } from './define-factory.js'
-import { f } from './field-builder.js'
+
 import type {
   AttrsOf,
   DepsOf,
   InferFixtureValue,
   InputAttrsOf,
 } from './types.js'
+
+import { defineFactory } from './define-factory.js'
+import { f } from './field-builder.js'
 
 describe('AttrsOf<S>', () => {
   test('empty schema', () => {
