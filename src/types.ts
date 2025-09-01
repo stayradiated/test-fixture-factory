@@ -2,11 +2,11 @@ import type { FieldBuilder } from './field-builder.js'
 
 type RequiredFlag = 'required' | 'optional'
 
-type Field<Deps extends object, Value, Flag extends RequiredFlag> = {
+type Field<Context extends object, Value, Flag extends RequiredFlag> = {
   context:
     | {
         fixtureList: string[]
-        getValue: (deps: Deps) => Value | undefined
+        getValue: (deps: Context) => Value | undefined
       }
     | undefined
   isRequired: Flag extends 'required' ? true : false
@@ -31,8 +31,8 @@ type AnySchema = Record<string, AnyFieldBuilder>
 
 type DestroyFn = () => Promise<void>
 
-type VitestFixtureFn<Deps, Value> = (
-  deps: object & Deps,
+type VitestFixtureFn<Context, Value> = (
+  context: object & Context,
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
 
@@ -43,7 +43,7 @@ type VitestFixtureFn<Deps, Value> = (
 type InferFixtureValue<T> = T extends (
   // biome-ignore lint/suspicious/noExplicitAny: this is ok
   ...args: any[]
-) => VitestFixtureFn<infer _Deps, infer Value>
+) => VitestFixtureFn<infer _Context, infer Value>
   ? Value
   : never
 
@@ -52,8 +52,8 @@ type FactoryResult<Value> = {
   destroy?: DestroyFn
 }
 
-type FactoryFn<Deps extends object, Attrs, Value> = (
-  deps: Deps,
+type FactoryFn<Context extends object, Attrs, Value> = (
+  context: Context,
   attrs: Attrs,
 ) => Promise<FactoryResult<Value>> | FactoryResult<Value>
 
@@ -135,14 +135,12 @@ type UnionToIntersection<U> = (
   ? I
   : never
 
-type AttrOf<F extends AnyField> = F extends Field<infer _D, infer T, infer O>
-  ? O extends 'optional'
-    ? T | undefined
-    : T
+type AttrOf<F extends AnyField> = F extends Field<infer _C, infer T, infer _F>
+  ? T
   : never
 
-type DepOf<F extends AnyField> = F extends Field<infer D, infer _T, infer _O>
-  ? D
+type DepOf<F extends AnyField> = F extends Field<infer C, infer _T, infer _F>
+  ? C
   : never
 
 type AttrsOf<S extends AnySchema> = {
@@ -154,11 +152,11 @@ type DepsOf<S extends AnySchema> = Prettify<
 >
 
 type IsFieldRequired<F extends AnyField> = F extends Field<
-  infer _D,
+  infer _C,
   infer _T,
-  infer O
+  infer F
 >
-  ? O extends 'required'
+  ? F extends 'required'
     ? true
     : false
   : never
