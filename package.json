@@ -1,6 +1,6 @@
 {
   "name": "test-fixture-factory",
-  "version": "2.0.0-0",
+  "version": "2.0.0-1",
   "description": "A minimal library for creating and managing test fixtures using Vitest, enabling structured, repeatable, and efficient testing processes.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
