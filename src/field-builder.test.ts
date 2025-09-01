@@ -1,6 +1,9 @@
 import { describe, expectTypeOf, test } from 'vitest'
-import { type FieldBuilder, f } from './field-builder.js'
+
+import type { FieldBuilder } from './field-builder.js'
 import type { Field, RequiredFlag } from './types.js'
+
+import { f } from './field-builder.js'
 
 const inspect = <Context extends object, Value, Flag extends RequiredFlag>(
   fieldBuilder: FieldBuilder<Context, Value, Flag>,

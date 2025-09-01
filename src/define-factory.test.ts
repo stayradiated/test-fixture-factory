@@ -1,4 +1,5 @@
 import { describe, test } from 'vitest'
+
 import { defineFactory } from './define-factory.js'
 import { f } from './field-builder.js'
 
@@ -19,11 +20,14 @@ const createFactory = () => {
         .default(-1)
         .useContext(({ accountId }: { accountId?: number }) => accountId),
     },
-    ({ name, accountId }) => {
+    (attrs) => {
+      const { name, accountId } = attrs
+
       const value = {
         name,
         accountId,
       }
+
       return {
         value,
         destroy: async () => {

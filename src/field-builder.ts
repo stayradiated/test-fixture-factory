@@ -1,5 +1,6 @@
-import { getFnDestructuredArgs } from './get-fn-destructured-args.js'
 import type { RequiredFlag } from './types.js'
+
+import { getFnDestructuredArgs } from './get-fn-destructured-args.js'
 
 type ContextOptions<C, V> = {
   fixtureList: string[]

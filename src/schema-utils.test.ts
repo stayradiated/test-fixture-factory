@@ -1,6 +1,6 @@
 import { describe, test } from 'vitest'
-import { f } from './field-builder.js'
 
+import { f } from './field-builder.js'
 import {
   getFixtureList,
   resolveSchema,

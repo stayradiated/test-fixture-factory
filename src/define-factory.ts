@@ -1,5 +1,3 @@
-import { SKIP_DESTROY } from './env-var.js'
-import { resolveSchema, validateSchemaData } from './schema-utils.js'
 import type {
   AnySchema,
   AttrsOf,
@@ -8,9 +6,13 @@ import type {
   FactoryOptions,
   FactoryResult,
   InputAttrsOf,
+  Prettify,
   UseCreateFn,
   UseValueFn,
 } from './types.js'
+
+import { SKIP_DESTROY } from './env-var.js'
+import { resolveSchema, validateSchemaData } from './schema-utils.js'
 import { UndefinedFieldError } from './undefined-field-error.js'
 import { wrapFixtureFn } from './wrap-fixture-fn.js'
 
@@ -22,7 +24,7 @@ const defineFactory = <S extends AnySchema, Value>(
   name: string,
   schema: S,
   factoryFn: (
-    options: AttrsOf<S>,
+    options: Prettify<AttrsOf<S>>,
   ) => Promise<FactoryResult<Value>> | FactoryResult<Value>,
 ): Factory<S, Value> => {
   const useCreateFn: UseCreateFn<S, Value> = (

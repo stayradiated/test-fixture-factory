@@ -12,13 +12,50 @@
     "lineWidth": 80,
     "attributePosition": "auto"
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              [":NODE:", ":PACKAGE:", ":PACKAGE_WITH_PROTOCOL:"],
+              ":BLANK_LINE:",
+              { "type": true },
+              ":BLANK_LINE:",
+              ":PATH:",
+              ":BLANK_LINE:",
+              "**"
+            ]
+          }
+        }
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "suspicious": {
         "noConfusingVoidType": "off"
+      },
+      "style": {
+        "noInferrableTypes": "error",
+        "noNonNullAssertion": "error",
+        "noParameterAssign": "error",
+        "noUnusedTemplateLiteral": "error",
+        "noUselessElse": "error",
+        "useAsConstAssertion": "error",
+        "useBlockStatements": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useImportType": {
+          "level": "error",
+          "options": { "style": "separatedType" }
+        },
+        "useNumberNamespace": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error"
       }
     }
   },
