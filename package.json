@@ -9,6 +9,7 @@
     "build": "tsup",
     "test": "vitest --watch=false",
     "tidy": "biome check --fix --unsafe",
+    "tidy:check": "biome check",
     "tsc": "tsc --incremental",
     "knip": "knip"
   },
