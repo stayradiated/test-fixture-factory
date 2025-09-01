@@ -1,27 +1,31 @@
 import { describe, test } from 'vitest'
 import { defineFactory } from './define-factory.js'
+import { f } from './field-builder.js'
 
 const createFactory = () => {
   const state = {
     isDestroyed: false,
   }
 
-  const factory = defineFactory<
-    { name?: string; accountId?: number },
-    { name?: string; accountId?: number },
-    { name: string; accountId: number }
-  >(({ name, accountId }, attrs) => {
-    const value = {
-      name: name ?? attrs.name ?? 'Rosie',
-      accountId: accountId ?? attrs.accountId ?? 1,
-    }
-    return {
-      value,
-      destroy: async () => {
-        state.isDestroyed = true
-      },
-    }
-  })
+  const factory = defineFactory(
+    'User',
+    {
+      name: f.type<string>().optional(),
+      accountId: f.type<number>().optional(),
+    },
+    ({ name, accountId }) => {
+      const value = {
+        name: name ?? 'Unknown',
+        accountId: accountId ?? accountId ?? -1,
+      }
+      return {
+        value,
+        destroy: async () => {
+          state.isDestroyed = true
+        },
+      }
+    },
+  )
 
   return {
     factory,
@@ -36,8 +40,8 @@ describe('useCreateFn', () => {
     const useCreate = factory.useCreateFn()
 
     await useCreate({}, async (create) => {
-      const result = await create({})
-      expect(result).toStrictEqual({ name: 'Rosie', accountId: 1 })
+      const result = await create()
+      expect(result).toStrictEqual({ name: 'Unknown', accountId: -1 })
 
       expect(state.isDestroyed).toBe(false)
     })
@@ -75,6 +79,44 @@ describe('useCreateFn', () => {
     expect(state.isDestroyed).toBe(true)
   })
 
+  test('with default attributes', async ({ expect }) => {
+    const { factory, state } = createFactory()
+
+    const useCreate = factory.useCreateFn({
+      name: 'Joseph',
+      accountId: 1,
+    })
+
+    await useCreate({}, async (create) => {
+      const result = await create({})
+      expect(result).toStrictEqual({ name: 'Joseph', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('with default attributes and attributes', async ({ expect }) => {
+    const { factory, state } = createFactory()
+
+    const useCreate = factory.useCreateFn({
+      // name: 'Joseph',
+      accountId: 1,
+    })
+
+    await useCreate({}, async (create) => {
+      const result = await create({
+        // name: 'Josephine',
+      })
+      expect(result).toStrictEqual({ name: 'Josephine', accountId: 1 })
+
+      expect(state.isDestroyed).toBe(false)
+    })
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
   test('with dependencies and attributes', async ({ expect }) => {
     const { factory, state } = createFactory()
 
@@ -95,7 +137,7 @@ describe('useCreateFn', () => {
   }) => {
     const { factory, state } = createFactory()
 
-    const useCreate = factory.useCreateFn({ shouldDestroy: false })
+    const useCreate = factory.useCreateFn({}, { shouldDestroy: false })
 
     await useCreate({}, async (create) => {
       const result = await create({})
@@ -188,17 +230,16 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const accountFactory = defineFactory<
-    Record<string, unknown>,
-    Partial<Omit<Account, 'id'>>,
-    Account
-  >(
-    // biome-ignore lint/correctness/noEmptyPattern: vitest requires {}
-    async ({}, attrs) => {
+  const accountFactory = defineFactory(
+    'Account',
+    {
+      name: f.type<string>().optional(),
+    },
+    async ({ name }) => {
       return {
         value: {
           id: Math.floor(Math.random() * 10000000),
-          name: attrs.name ?? 'Test Account',
+          name: name ?? 'Test Account',
         },
       }
     },
@@ -210,19 +251,28 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const personFactory = defineFactory<
-    { account: Account },
-    Partial<Omit<Person, 'id'>>,
-    Person
-  >(async ({ account }, attrs) => {
-    return {
-      value: {
+  const personFactory = defineFactory(
+    'Person',
+    {
+      accountId: f
+        .type<number>()
+        .useContext(
+          ({ account }: { account?: Pick<Account, 'id'> }) => account?.id,
+        ),
+      name: f.type<string>().optional(),
+    },
+    ({ accountId, name }) => {
+      const person: Person = {
         id: Math.floor(Math.random() * 10000000),
-        accountId: attrs?.accountId ?? account.id,
-        name: attrs.name ?? 'Test Person',
-      },
-    }
-  })
+        accountId: accountId,
+        name: name ?? 'Test Person',
+      }
+
+      return {
+        value: person,
+      }
+    },
+  )
 
   const myTest = test.extend({
     account: accountFactory.useValueFn({}),
@@ -232,7 +282,7 @@ describe('vitest.extend', () => {
     createPerson: personFactory.useCreateFn(),
   })
 
-  myTest(
+  myTest.only(
     'should create a person with an existing account',
     async ({ account, createPerson, expect }) => {
       const person = await createPerson({ name: 'Maxine' })

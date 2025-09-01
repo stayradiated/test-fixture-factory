@@ -1,14 +1,22 @@
-type UndefinedFieldErrorOptions = {
-  factory: string
-  attribute: string
-  dependency: string
+import type { AnyField } from './types.js'
+
+const formatMissingField = ([key, field]: [string, AnyField]): string => {
+  const fixtureList = field.context?.fixtureList ?? []
+
+  if (fixtureList.length === 0) {
+    return `- ${key}: must be provided as an attribute`
+  }
+
+  return `- ${key}: must be provided as an attribute or via the test context (${fixtureList.join(', ')})`
 }
 
 class UndefinedFieldError extends Error {
-  constructor(options: UndefinedFieldErrorOptions) {
-    const { factory, dependency, attribute } = options
+  constructor(name: string, missingFields: [string, AnyField][]) {
+    const count = missingFields.length
+
     super(
-      `[${factory}] Undefined field: '${attribute}'. You must either define a '${dependency}' test fixture or supply the '${attribute}' attribute.`,
+      `[${name}] ${count} required field(s) have undefined values:
+${missingFields.map(formatMissingField).join('\n')}`,
     )
   }
 }
