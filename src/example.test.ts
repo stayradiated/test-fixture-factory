@@ -29,7 +29,7 @@ const bookFactory = defineFactory(
     authorId: f
       .type<number>()
       .useContext(({ author }: { author?: Pick<Author, 'id'> }) => author?.id),
-    title: f.type<string>().optional(),
+    title: f.type<string>().default('Unknown'),
   },
   async ({ authorId, title }) => {
     const value: Book = {

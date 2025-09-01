@@ -1,20 +1,24 @@
 import { getFnDestructuredArgs } from './get-fn-destructured-args.js'
+import type { RequiredFlag } from './types.js'
 
 type ContextOptions<C, V> = {
   fixtureList: string[]
   getValue: (context: C) => V | undefined
 }
 
-class FieldBuilder<Context extends object, Value, IsOptional extends boolean> {
-  private context: ContextOptions<Context, Value> | undefined
-  private isOptional: IsOptional
+class FieldBuilder<Context extends object, Value, Flag extends RequiredFlag> {
+  private readonly context: ContextOptions<Context, Value> | undefined
+  private readonly isRequired: Flag extends 'required' ? true : false
+  private readonly defaultValue: Value | undefined
 
   constructor(
     context: ContextOptions<Context, Value> | undefined,
-    isOptional: IsOptional,
+    isRequired: Flag extends 'required' ? true : false,
+    defaultValue: Value | undefined,
   ) {
     this.context = context
-    this.isOptional = isOptional
+    this.isRequired = isRequired
+    this.defaultValue = defaultValue
   }
 
   useContext<Deps extends object>(fn: (dep: Deps) => Value | undefined) {
@@ -24,23 +28,36 @@ class FieldBuilder<Context extends object, Value, IsOptional extends boolean> {
 
     const fixtureList = getFnDestructuredArgs(fn)
 
-    return new FieldBuilder<Context & Deps, Value, IsOptional>(
+    return new FieldBuilder<Context & Deps, Value, Flag>(
       {
         fixtureList,
         getValue: fn,
       },
-      this.isOptional,
+      this.isRequired,
+      this.defaultValue,
     )
   }
 
   optional() {
-    return new FieldBuilder<Context, Value, true>(this.context, true)
+    return new FieldBuilder<Context, Value | undefined, 'optional'>(
+      this.context,
+      false,
+      this.defaultValue,
+    )
+  }
+
+  default(defaultValue: Value) {
+    return new FieldBuilder<Context, Value, 'optional'>(
+      this.context,
+      false,
+      defaultValue,
+    )
   }
 }
 
 const f = {
   type<T>() {
-    return new FieldBuilder<object, T, false>(undefined, false)
+    return new FieldBuilder<object, T, 'required'>(undefined, true, undefined)
   },
 }
 

@@ -1,22 +1,25 @@
 import type { FieldBuilder } from './field-builder.js'
 
-type Field<Deps extends object, Value, IsOptional extends boolean> = {
+type RequiredFlag = 'required' | 'optional'
+
+type Field<Deps extends object, Value, Flag extends RequiredFlag> = {
   context:
     | {
         fixtureList: string[]
         getValue: (deps: Deps) => Value | undefined
       }
     | undefined
-  isOptional: IsOptional
+  isRequired: Flag extends 'required' ? true : false
+  defaultValue: Value | undefined
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: this is ok
 type FieldOf<FB extends FieldBuilder<any, any, any>> = FB extends FieldBuilder<
   infer Context,
   infer Value,
-  infer IsOptional
+  infer Flag
 >
-  ? Field<Context, Value, IsOptional>
+  ? Field<Context, Value, Flag>
   : never
 
 // biome-ignore lint/suspicious/noExplicitAny: this is ok
@@ -133,7 +136,7 @@ type UnionToIntersection<U> = (
   : never
 
 type AttrOf<F extends AnyField> = F extends Field<infer _D, infer T, infer O>
-  ? O extends true
+  ? O extends 'optional'
     ? T | undefined
     : T
   : never
@@ -150,12 +153,14 @@ type DepsOf<S extends AnySchema> = Prettify<
   UnionToIntersection<DepOf<FieldOf<S[keyof S]>>>
 >
 
-type IsFieldOptional<F extends AnyField> = F extends Field<
+type IsFieldRequired<F extends AnyField> = F extends Field<
   infer _D,
   infer _T,
   infer O
 >
-  ? O
+  ? O extends 'required'
+    ? true
+    : false
   : never
 
 // does this field have any dependency keys?
@@ -165,11 +170,11 @@ type HasDep<F extends AnyField> = [keyof DepOf<F>] extends [never]
 
 // keys that are optional in INPUT (either optional() OR has dep)
 type OptionalKeysFromSchema<S extends AnySchema> = {
-  [K in keyof S]: IsFieldOptional<FieldOf<S[K]>> extends true
-    ? K
-    : HasDep<FieldOf<S[K]>> extends true
+  [K in keyof S]: IsFieldRequired<FieldOf<S[K]>> extends true
+    ? HasDep<FieldOf<S[K]>> extends true
       ? K
       : never
+    : K
 }[keyof S]
 
 // keys that are required in INPUT (not optional and no dep)
@@ -202,4 +207,5 @@ export type {
   AnySchema,
   InputAttrsOf,
   Voidable,
+  RequiredFlag,
 }

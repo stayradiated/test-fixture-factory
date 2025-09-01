@@ -18,6 +18,14 @@ const schemaValues = <S extends AnySchema>(s: S): Array<AnyField> => {
   return Object.values(s as unknown as AnyReadableSchema)
 }
 
+const resolveDefaultValues = <S extends AnySchema>(schema: S) => {
+  return Object.fromEntries(
+    schemaEntries(schema).map(([key, value]) => {
+      return [key, value.defaultValue]
+    }),
+  )
+}
+
 const resolveDeps = <S extends AnySchema>(schema: S, deps: DepsOf<S>) => {
   return Object.fromEntries(
     schemaEntries(schema)
@@ -36,7 +44,7 @@ const validateSchemaData = <S extends AnySchema>(
 ): [string, AnyField][] => {
   return schemaEntries(schema).filter(([key, field]) => {
     // ignore optional fields
-    if (field.isOptional) {
+    if (!field.isRequired) {
       return false
     }
     // ignore fields that are already defined
@@ -53,6 +61,7 @@ const resolveSchema = <S extends AnySchema>(
   attrs: Voidable<InputAttrsOf<S>>,
 ) => {
   const result = {
+    ...resolveDefaultValues(schema),
     ...resolveDeps(schema, deps),
     ...attrs,
   } as AttrsOf<S>
