@@ -26,7 +26,7 @@ const defineFactory = <S extends AnySchema, Value>(
   ) => Promise<FactoryResult<Value>> | FactoryResult<Value>,
 ): Factory<S, Value> => {
   const useCreateFn: UseCreateFn<S, Value> = (
-    presetAttrs?: Partial<InputAttrsOf<S>> | undefined,
+    presetAttrs?: Partial<InputAttrsOf<S>> | void,
     { shouldDestroy } = defaultFactoryOptions,
   ) =>
     wrapFixtureFn(schema, async (deps, use) => {
@@ -37,6 +37,7 @@ const defineFactory = <S extends AnySchema, Value>(
           ...presetAttrs,
           ...attrs,
         } as InputAttrsOf<S>)
+
         const errorList = validateSchemaData(schema, data)
         if (errorList.length > 0) {
           throw new UndefinedFieldError(name, errorList)

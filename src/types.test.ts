@@ -145,7 +145,6 @@ describe('InferFixtureValue', () => {
   test('infer value of useCreateFn', () => {
     type Actual = InferFixtureValue<typeof mockFactory.useCreateFn>
     type Expected = (
-      // biome-ignore lint/suspicious/noConfusingVoidType: void is used to indicate optional arguments
       attrs: void | Omit<{ name: string }, 'name'>,
     ) => Promise<string>
 

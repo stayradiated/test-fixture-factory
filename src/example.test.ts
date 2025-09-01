@@ -7,11 +7,12 @@ type Author = { id: number; name: string }
 const authorFactory = defineFactory(
   'Author',
   {
+    id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
     name: f.type<string>(),
   },
-  async ({ name }) => {
+  async ({ id, name }) => {
     const value: Author = {
-      id: Math.floor(Math.random() * 1_000_000),
+      id,
       name,
     }
 
@@ -101,7 +102,7 @@ describe('useCreate', () => {
   })
 
   test('should create an author', async ({ createAuthor, expect }) => {
-    const author = await createAuthor({})
+    const author = await createAuthor({ id: 127 })
     expect(author).toStrictEqual({
       id: expect.any(Number),
       name: 'D. Adams',

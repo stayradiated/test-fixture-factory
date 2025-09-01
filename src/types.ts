@@ -76,10 +76,7 @@ type RequiredKeysOf<BaseType extends object> = BaseType extends unknown
   ? Exclude<keyof BaseType, OptionalKeysOf<BaseType>>
   : never
 
-type Voidable<T extends object> = RequiredKeysOf<T> extends never
-  ? // biome-ignore lint/suspicious/noConfusingVoidType: void is used to indicate optional arguments
-    T | void
-  : T
+type Voidable<T extends object> = RequiredKeysOf<T> extends never ? T | void : T
 
 type CreateFn<Attrs extends object, Value> = (
   attrs: Voidable<Attrs>,
@@ -88,17 +85,17 @@ type CreateFn<Attrs extends object, Value> = (
 type UseCreateFn<S extends AnySchema, Value> = {
   // no preset attrs → must provide all attrs at runtime
   (
-    presetAttrs?: undefined | undefined,
+    presetAttrs?: void | undefined,
     options?: FactoryOptions,
   ): VitestFixtureFn<DepsOf<S>, CreateFn<InputAttrsOf<S>, Value>>
 
   // complete preset attrs → no attrs needed at runtime (can call with void/empty)
-  <PresetAttrs extends InputAttrsOf<S>>(
+  <PresetAttrs extends AttrsOf<S>>(
     presetAttrs: PresetAttrs,
     options?: FactoryOptions,
   ): VitestFixtureFn<
     DepsOf<S>,
-    (attrs?: undefined | Record<string, never>) => Promise<Value>
+    (attrs?: void | Record<string, never>) => Promise<Value>
   >
 
   // partial preset attrs → must provide remaining attrs at runtime
@@ -135,11 +132,11 @@ type UnionToIntersection<U> = (
   ? I
   : never
 
-type AttrOf<F extends AnyField> = F extends Field<infer _C, infer T, infer _F>
-  ? T
+type AttrOf<F extends AnyField> = F extends Field<infer _C, infer V, infer _F>
+  ? V
   : never
 
-type DepOf<F extends AnyField> = F extends Field<infer C, infer _T, infer _F>
+type DepOf<F extends AnyField> = F extends Field<infer C, infer _V, infer _F>
   ? C
   : never
 
@@ -153,7 +150,7 @@ type DepsOf<S extends AnySchema> = Prettify<
 
 type IsFieldRequired<F extends AnyField> = F extends Field<
   infer _C,
-  infer _T,
+  infer _V,
   infer F
 >
   ? F extends 'required'
