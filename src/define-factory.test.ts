@@ -10,13 +10,19 @@ const createFactory = () => {
   const factory = defineFactory(
     'User',
     {
-      name: f.type<string>().optional(),
-      accountId: f.type<number>().optional(),
+      name: f
+        .type<string>()
+        .default('Unknown')
+        .useContext(({ name }: { name?: string }) => name),
+      accountId: f
+        .type<number>()
+        .default(-1)
+        .useContext(({ accountId }: { accountId?: number }) => accountId),
     },
     ({ name, accountId }) => {
       const value = {
-        name: name ?? 'Unknown',
-        accountId: accountId ?? accountId ?? -1,
+        name,
+        accountId,
       }
       return {
         value,
@@ -55,7 +61,7 @@ describe('useCreateFn', () => {
     const useCreate = factory.useCreateFn()
 
     await useCreate({ name: 'Gregg', accountId: 33 }, async (create) => {
-      const result = await create({})
+      const result = await create()
       expect(result).toStrictEqual({ name: 'Gregg', accountId: 33 })
 
       expect(state.isDestroyed).toBe(false)
@@ -101,13 +107,12 @@ describe('useCreateFn', () => {
     const { factory, state } = createFactory()
 
     const useCreate = factory.useCreateFn({
-      // name: 'Joseph',
       accountId: 1,
     })
 
     await useCreate({}, async (create) => {
       const result = await create({
-        // name: 'Josephine',
+        name: 'Josephine',
       })
       expect(result).toStrictEqual({ name: 'Josephine', accountId: 1 })
 
@@ -140,8 +145,8 @@ describe('useCreateFn', () => {
     const useCreate = factory.useCreateFn({}, { shouldDestroy: false })
 
     await useCreate({}, async (create) => {
-      const result = await create({})
-      expect(result).toStrictEqual({ name: 'Rosie', accountId: 1 })
+      const result = await create()
+      expect(result).toStrictEqual({ name: 'Unknown', accountId: -1 })
 
       expect(state.isDestroyed).toBe(false)
     })
@@ -158,7 +163,7 @@ describe('useValueFn', () => {
     const useValue = factory.useValueFn({})
 
     await useValue({}, async (value) => {
-      expect(value).toStrictEqual({ name: 'Rosie', accountId: 1 })
+      expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
       expect(state.isDestroyed).toBe(false)
     })
 
@@ -214,7 +219,7 @@ describe('useValueFn', () => {
     const useValue = factory.useValueFn({}, { shouldDestroy: false })
 
     await useValue({}, async (value) => {
-      expect(value).toStrictEqual({ name: 'Rosie', accountId: 1 })
+      expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
 
       expect(state.isDestroyed).toBe(false)
     })
@@ -282,7 +287,7 @@ describe('vitest.extend', () => {
     createPerson: personFactory.useCreateFn(),
   })
 
-  myTest.only(
+  myTest(
     'should create a person with an existing account',
     async ({ account, createPerson, expect }) => {
       const person = await createPerson({ name: 'Maxine' })

@@ -9,6 +9,15 @@ import type {
 
 type AnyReadableSchema = Record<string, AnyField>
 
+const deleteUndefinedKeys = <T>(value: T): T => {
+  for (const key in value) {
+    if (value[key] === undefined) {
+      delete value[key]
+    }
+  }
+  return value
+}
+
 const schemaEntries = <S extends AnySchema>(
   s: S,
 ): Array<[string, AnyField]> => {
@@ -19,22 +28,26 @@ const schemaValues = <S extends AnySchema>(s: S): Array<AnyField> => {
 }
 
 const resolveDefaultValues = <S extends AnySchema>(schema: S) => {
-  return Object.fromEntries(
-    schemaEntries(schema).map(([key, value]) => {
-      return [key, value.defaultValue]
-    }),
+  return deleteUndefinedKeys(
+    Object.fromEntries(
+      schemaEntries(schema).map(([key, value]) => {
+        return [key, value.defaultValue]
+      }),
+    ),
   )
 }
 
 const resolveDeps = <S extends AnySchema>(schema: S, deps: DepsOf<S>) => {
-  return Object.fromEntries(
-    schemaEntries(schema)
-      .filter(([_key, value]) => {
-        return typeof value.context?.getValue === 'function'
-      })
-      .map(([key, value]) => {
-        return [key, value.context?.getValue?.(deps)]
-      }),
+  return deleteUndefinedKeys(
+    Object.fromEntries(
+      schemaEntries(schema)
+        .filter(([_key, value]) => {
+          return typeof value.context?.getValue === 'function'
+        })
+        .map(([key, value]) => {
+          return [key, value.context?.getValue?.(deps)]
+        }),
+    ),
   )
 }
 
@@ -63,7 +76,7 @@ const resolveSchema = <S extends AnySchema>(
   const result = {
     ...resolveDefaultValues(schema),
     ...resolveDeps(schema, deps),
-    ...attrs,
+    ...deleteUndefinedKeys({ ...attrs }),
   } as AttrsOf<S>
 
   return result
