@@ -65,6 +65,22 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
+  build(context: Context, attrs: VoidableInputOf<Schema>) {
+    const { name, schema, factoryFn } = this.state
+
+    if (!factoryFn) {
+      throw new Error('.withFn() must be called before .build()')
+    }
+
+    const data = resolveSchema(schema, context, attrs)
+    const errorList = validateSchemaData(schema, data)
+    if (errorList.length > 0) {
+      throw new UndefinedFieldError(name, errorList)
+    }
+
+    return factoryFn(data)
+  }
+
   useCreateValue<
     PresetAttrs extends void | undefined | Partial<InputOf<Schema>>,
   >(
@@ -77,14 +93,14 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { name, schema, factoryFn } = this.state
 
     if (!factoryFn) {
-      throw new Error('factoryFn must be defined')
+      throw new Error('.withFn() must be called before .useCreateValue()')
     }
 
-    return wrapFixtureFn(schema, async (deps, use) => {
+    return wrapFixtureFn(schema, async (context, use) => {
       const destroyList: DestroyFn[] = []
 
       await use((async (attrs) => {
-        const data = resolveSchema(schema, deps, {
+        const data = resolveSchema(schema, context, {
           ...(presetAttrs ?? {}),
           ...attrs,
         } as unknown as InputOf<Schema>)
@@ -119,11 +135,11 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { shouldDestroy } = options
 
     if (!factoryFn) {
-      throw new Error('factoryFn must be defined')
+      throw new Error('.withFn() must be called before .useValue()')
     }
 
-    return wrapFixtureFn(schema, async (deps, use) => {
-      const data = resolveSchema(schema, deps, attrs)
+    return wrapFixtureFn(schema, async (context, use) => {
+      const data = resolveSchema(schema, context, attrs)
       const errorList = validateSchemaData(schema, data)
       if (errorList.length > 0) {
         throw new UndefinedFieldError(name, errorList)
