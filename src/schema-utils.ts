@@ -50,17 +50,7 @@ const schemaValues = <S extends AnySchema>(s: S): Array<FieldOf<S>> => {
   )
 }
 
-const resolveDefaultValues = <S extends AnySchema>(schema: S) => {
-  return deleteUndefinedKeys(
-    Object.fromEntries(
-      schemaEntries(schema).map(([key, value]) => {
-        return [key, value.defaultValue]
-      }),
-    ),
-  )
-}
-
-const resolveFixtures = <
+const resolveDefaultValues = <
   Context extends object,
   Schema extends AnySchemaWithContext<Context>,
 >(
@@ -69,14 +59,14 @@ const resolveFixtures = <
 ) => {
   return deleteUndefinedKeys(
     Object.fromEntries(
-      schemaEntries(schema)
-        .filter(([_key, value]) => {
-          return typeof value.fromContext === 'function'
-        })
-        .map(([key, value]) => {
-          return [key, value.fromContext?.(context)]
-        }),
-    ),
+      schemaEntries(schema).map(([key, value]) => {
+        const defaultValue =
+          typeof value.defaultValue === 'function'
+            ? value.defaultValue(context)
+            : value.defaultValue
+        return [key, defaultValue]
+      }),
+    ) as Partial<OutputOf<Schema>>,
   )
 }
 
@@ -111,8 +101,7 @@ const resolveSchema = <
   attrs: VoidableInputOf<Schema>,
 ) => {
   const result = {
-    ...resolveDefaultValues(schema),
-    ...resolveFixtures(schema, context),
+    ...resolveDefaultValues(schema, context),
     ...deleteUndefinedKeys({ ...attrs }),
   } as OutputOf<Schema>
 

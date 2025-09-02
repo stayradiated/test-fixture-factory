@@ -13,9 +13,8 @@ type RequiredFlag = 'required' | 'optional'
 
 type Field<Fixtures extends object, Value, Flag extends RequiredFlag> = {
   fixtureList: (keyof Fixtures & string)[]
-  fromContext: ((ctx: Fixtures) => Value | undefined) | undefined
   isRequired: Flag extends 'required' ? true : false
-  defaultValue: Value | undefined
+  defaultValue: undefined | Value | ((tcx: Fixtures) => Value | undefined)
 }
 
 // cast a FieldBuilder to a Field
@@ -63,7 +62,7 @@ type MissingField = {
 
 /* VITEST FIXTURE */
 
-type DestroyFn = () => Promise<void>
+type DestroyFn = () => Promise<void> | void
 
 type VitestFixtureFn<Context, FixtureValue> = (
   context: object & Context,

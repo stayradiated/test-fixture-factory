@@ -12,7 +12,7 @@ describe('resolveSchema', () => {
     const schema = createSchema().with((f) => ({
       a: f.type<number>().default(1),
       b: f.type<number>().default(2),
-      c: f.type<number>().default(3),
+      c: f.type<number>().default(() => 3),
     }))
 
     const result = resolveSchema(schema, {}, {})
@@ -30,15 +30,15 @@ describe('resolveSchema', () => {
         a: f
           .type<number>()
           .dependsOn('a')
-          .use(({ a }) => a),
+          .default(({ a }) => a),
         b: f
           .type<number>()
           .dependsOn('b')
-          .use(({ b }) => b),
+          .default(({ b }) => b),
         c: f
           .type<number>()
           .dependsOn('c')
-          .use(({ c }) => c),
+          .default(({ c }) => c),
       }),
     )
 
@@ -110,11 +110,11 @@ describe('getFixtureList', () => {
         a: f
           .type<number>()
           .dependsOn('a')
-          .use(({ a }) => a),
+          .default(({ a }) => a),
         bc: f
           .type<number>()
           .dependsOn('b', 'c')
-          .use(({ b, c }) => b + c),
+          .default(({ b, c }) => b + c),
       }),
     )
 

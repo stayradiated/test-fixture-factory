@@ -12,6 +12,13 @@ class FieldBuilder<
     this.state = field
   }
 
+  optional() {
+    return new FieldBuilder<Context, Fixtures, Value | undefined, 'optional'>({
+      ...this.state,
+      isRequired: false,
+    })
+  }
+
   dependsOn<NextFixtures extends keyof Context & string>(
     ...keys: NextFixtures[]
   ) {
@@ -20,42 +27,30 @@ class FieldBuilder<
         'Cannot call .dependsOn() multiple times on the same field!',
       )
     }
-    if (this.state.fromContext) {
-      throw new Error('Cannot call .dependsOn() after .use()!')
+    if (typeof this.state.defaultValue !== 'undefined') {
+      throw new Error('Cannot call .dependsOn() after .default()!')
     }
 
     return new FieldBuilder<Context, NextFixtures, Value, Flag>({
       ...this.state,
       fixtureList: keys,
-      fromContext: undefined,
+      defaultValue: undefined,
     })
   }
 
-  use(fn: (ctx: Pick<Context, Fixtures>) => Value | undefined) {
-    if (this.state.fromContext) {
-      throw new Error('Cannot call .use() multiple times on the same field!')
-    }
-    if (this.state.fixtureList.length === 0) {
-      throw new Error('Cannot call .use() before .dependsOn()!')
-    }
-
-    return new FieldBuilder<Context, Fixtures, Value, Flag>({
-      ...this.state,
-      fromContext: fn,
-    })
-  }
-
-  optional() {
-    return new FieldBuilder<Context, Fixtures, Value | undefined, 'optional'>({
-      ...this.state,
-      isRequired: false,
-    })
-  }
-
-  default(defaultValue: Value) {
+  default(defaultValue: Value | ((ctx: Pick<Context, Fixtures>) => Value)) {
     return new FieldBuilder<Context, Fixtures, Value, 'optional'>({
       ...this.state,
       isRequired: false,
+      defaultValue,
+    })
+  }
+
+  optionalDefault(
+    defaultValue: (ctx: Pick<Context, Fixtures>) => Value | undefined,
+  ) {
+    return new FieldBuilder<Context, Fixtures, Value, Flag>({
+      ...this.state,
       defaultValue,
     })
   }
@@ -71,7 +66,6 @@ const createFieldBuilder = <
   type<T>() {
     return new FieldBuilder<Context, never, T, 'required'>({
       fixtureList: [],
-      fromContext: undefined,
       isRequired: true,
       defaultValue: undefined,
     })

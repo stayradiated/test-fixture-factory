@@ -220,7 +220,7 @@ describe('OptionalInputKeysOf<S>', () => {
       name: f
         .type<string>()
         .dependsOn('name')
-        .use(({ name }) => name),
+        .optionalDefault(({ name }) => name),
       age: f.type<number>(),
     }))
     type Actual = OptionalInputKeysOf<typeof schema>
@@ -265,7 +265,7 @@ describe('RequiredInputKeysOf<S>', () => {
       name: f
         .type<string>()
         .dependsOn('name')
-        .use(({ name }) => name),
+        .optionalDefault(({ name }) => name),
       age: f.type<number>(),
     }))
     type Actual = RequiredInputKeysOf<typeof schema>
@@ -301,12 +301,11 @@ describe('InputOf<S>', () => {
       c: f
         .type<'c'>()
         .dependsOn('c')
-        .use(({ c }) => c),
+        .default(({ c }) => c),
       d: f
         .type<'d'>()
         .dependsOn('d')
-        .use(({ d }) => d)
-        .optional(),
+        .optionalDefault(({ d }) => d),
     }))
     type Actual = InputOf<typeof schema>
     type Expected = {
@@ -360,7 +359,7 @@ describe('VoidableInputOf<S>', () => {
       name: f
         .type<string>()
         .dependsOn('name')
-        .use(({ name }) => name),
+        .default(({ name }) => name),
     }))
     type Actual = VoidableInputOf<typeof schema>
     type Expected = { name?: string | undefined } | void

@@ -30,7 +30,6 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: [],
-      fromContext: undefined,
       isRequired: true,
       defaultValue: undefined,
     })
@@ -46,13 +45,12 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: [],
-      fromContext: undefined,
       isRequired: false,
       defaultValue: undefined,
     })
   })
 
-  test('.type().use()', ({ expect }) => {
+  test('.type().default(fn)', ({ expect }) => {
     const f = createFieldBuilder<{
       dependency: boolean
     }>()
@@ -60,33 +58,27 @@ describe('createFieldFactory', () => {
     const field = f
       .type<boolean>()
       .dependsOn('dependency')
-      .use(({ dependency }) => dependency)
+      .default(({ dependency }) => dependency)
 
     expectTypeOf<typeof field>().toEqualTypeOf<
-      FieldBuilder<{ dependency: boolean }, 'dependency', boolean, 'required'>
+      FieldBuilder<{ dependency: boolean }, 'dependency', boolean, 'optional'>
     >()
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: ['dependency'],
-      fromContext: expect.any(Function),
-      isRequired: true,
-      defaultValue: undefined,
+      isRequired: false,
+      defaultValue: expect.any(Function),
     })
-    expect(inspect(field).fromContext?.({ dependency: true })).toBe(true)
   })
 
-  test('.type().use().optional()', ({ expect }) => {
+  test('.type().default(fn).optional()', ({ expect }) => {
     const f = createFieldBuilder<{ value?: string }>()
     const field = f
       .type<bigint>()
       .optional()
       .dependsOn('value')
-      .use(({ value }) => {
-        try {
-          return typeof value === 'string' ? BigInt(value) : undefined
-        } catch {
-          return undefined
-        }
+      .default(({ value }) => {
+        return typeof value === 'string' ? BigInt(value) : undefined
       })
 
     expectTypeOf<typeof field>().toEqualTypeOf<
@@ -95,12 +87,9 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: ['value'],
-      fromContext: expect.any(Function),
       isRequired: false,
-      defaultValue: undefined,
+      defaultValue: expect.any(Function),
     })
-    expect(inspect(field).fromContext?.({ value: '1234' })).toBe(1234n)
-    expect(inspect(field).fromContext?.({ value: 'fail' })).toBe(undefined)
   })
 
   test('.type().default()', ({ expect }) => {
@@ -113,7 +102,6 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: [],
-      fromContext: undefined,
       isRequired: false,
       defaultValue: 'default',
     })
@@ -129,20 +117,18 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: [],
-      fromContext: undefined,
       isRequired: false,
       defaultValue: 123,
     })
   })
 
-  test('.type().use().default()', ({ expect }) => {
+  test('.type().default(fn)', ({ expect }) => {
     const f = createFieldBuilder<{ value?: string }>()
 
     const field = f
       .type<boolean>()
-      .default(false)
       .dependsOn('value')
-      .use(({ value }) => value === 'true')
+      .default(({ value }) => value === 'true')
 
     expectTypeOf<typeof field>().toEqualTypeOf<
       FieldBuilder<{ value?: string }, 'value', boolean, 'optional'>
@@ -150,41 +136,29 @@ describe('createFieldFactory', () => {
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: ['value'],
-      fromContext: expect.any(Function),
       isRequired: false,
-      defaultValue: false,
+      defaultValue: expect.any(Function),
     })
-    expect(inspect(field).fromContext?.({ value: 'true' })).toBe(true)
-    expect(inspect(field).fromContext?.({ value: 'fail' })).toBe(false)
   })
 
-  test('.type().use().default().optional()', ({ expect }) => {
+  test('.type().optionalDefault(fn)', ({ expect }) => {
     const f = createFieldBuilder<{ value?: string }>()
 
     const field = f
       .type<bigint>()
-      .default(123n)
-      .optional()
       .dependsOn('value')
-      .use(({ value }) => {
-        try {
-          return typeof value === 'string' ? BigInt(value) : undefined
-        } catch {
-          return undefined
-        }
+      .optionalDefault(({ value }) => {
+        return typeof value === 'string' ? BigInt(value) : undefined
       })
 
     expectTypeOf<typeof field>().toEqualTypeOf<
-      FieldBuilder<{ value?: string }, 'value', bigint | undefined, 'optional'>
+      FieldBuilder<{ value?: string }, 'value', bigint, 'required'>
     >()
 
     expect(inspect(field)).toStrictEqual<AnyField>({
       fixtureList: ['value'],
-      fromContext: expect.any(Function),
-      isRequired: false,
-      defaultValue: 123n,
+      isRequired: true,
+      defaultValue: expect.any(Function),
     })
-    expect(inspect(field).fromContext?.({ value: '1234' })).toBe(1234n)
-    expect(inspect(field).fromContext?.({ value: 'fail' })).toBe(undefined)
   })
 })

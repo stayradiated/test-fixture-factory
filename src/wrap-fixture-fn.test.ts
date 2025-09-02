@@ -26,7 +26,7 @@ test('should wrap a function with dependencies (arrow)', ({ expect }) => {
     value: f
       .type<string>()
       .dependsOn('name')
-      .use(({ name }) => name),
+      .default(({ name }) => name),
   }))
 
   const spy = vi.fn()
@@ -39,7 +39,7 @@ test('should wrap a function with dependencies (function)', ({ expect }) => {
     value: f
       .type<string>()
       .dependsOn('user')
-      .use(({ user }) => user.name),
+      .default(({ user }) => user.name),
   }))
   const spy = vi.fn()
   const test = wrapFixtureFn(schema, spy)
@@ -51,7 +51,7 @@ test('should use dep name from decode fn', ({ expect }) => {
     value: f
       .type<string>()
       .dependsOn('user')
-      .use(({ user }) => user.name),
+      .default(({ user }) => user.name),
   }))
   const spy = vi.fn()
   const test = wrapFixtureFn(schema, spy)
@@ -65,11 +65,11 @@ test('should wrap a function with dependencies and attributes', ({
     valueA: f
       .type<string>()
       .dependsOn('name')
-      .use(({ name }) => name),
+      .default(({ name }) => name),
     valueB: f
       .type<number>()
       .dependsOn('age')
-      .use(({ age }) => age),
+      .default(({ age }) => age),
     valueC: f.type<string>().optional(),
   }))
   const spy = vi.fn()
