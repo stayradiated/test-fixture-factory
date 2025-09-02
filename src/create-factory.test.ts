@@ -1,26 +1,31 @@
 import { describe, test } from 'vitest'
 
-import { defineFactory } from './define-factory.js'
-import { f } from './field-builder.js'
+import { createFactory } from './create-factory.js'
 
-const createFactory = () => {
+const getFactory = () => {
   const state = {
     isDestroyed: false,
   }
 
-  const factory = defineFactory(
-    'User',
-    {
+  const factory = createFactory('User')
+    .withContext<{
+      name?: string
+      accountId?: number
+    }>()
+    .withSchema((f) => ({
       name: f
         .type<string>()
         .default('Unknown')
-        .useContext(({ name }: { name?: string }) => name),
+        .dependsOn('name')
+        .use(({ name }) => name),
+
       accountId: f
         .type<number>()
         .default(-1)
-        .useContext(({ accountId }: { accountId?: number }) => accountId),
-    },
-    (attrs) => {
+        .dependsOn('accountId')
+        .use(({ accountId }) => accountId),
+    }))
+    .withFn((attrs) => {
       const { name, accountId } = attrs
 
       const value = {
@@ -34,8 +39,7 @@ const createFactory = () => {
           state.isDestroyed = true
         },
       }
-    },
-  )
+    })
 
   return {
     factory,
@@ -45,9 +49,9 @@ const createFactory = () => {
 
 describe('useCreateFn', () => {
   test('without dependencies or attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn()
+    const useCreate = factory.useCreateValue()
 
     await useCreate({}, async (create) => {
       const result = await create()
@@ -60,9 +64,9 @@ describe('useCreateFn', () => {
   })
 
   test('with dependencies', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn()
+    const useCreate = factory.useCreateValue()
 
     await useCreate({ name: 'Gregg', accountId: 33 }, async (create) => {
       const result = await create()
@@ -75,9 +79,9 @@ describe('useCreateFn', () => {
   })
 
   test('with attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn()
+    const useCreate = factory.useCreateValue()
 
     await useCreate({}, async (create) => {
       const result = await create({ name: 'Joseph', accountId: 42 })
@@ -90,9 +94,9 @@ describe('useCreateFn', () => {
   })
 
   test('with default attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn({
+    const useCreate = factory.useCreateValue({
       name: 'Joseph',
       accountId: 1,
     })
@@ -108,9 +112,9 @@ describe('useCreateFn', () => {
   })
 
   test('with default attributes and attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn({
+    const useCreate = factory.useCreateValue({
       accountId: 1,
     })
 
@@ -127,9 +131,9 @@ describe('useCreateFn', () => {
   })
 
   test('with dependencies and attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn()
+    const useCreate = factory.useCreateValue()
 
     await useCreate({ accountId: 27 }, async (create) => {
       const result = await create({ name: 'Josephine' })
@@ -144,9 +148,9 @@ describe('useCreateFn', () => {
   test('should not destroy values if shouldDestroy is false', async ({
     expect,
   }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useCreate = factory.useCreateFn({}, { shouldDestroy: false })
+    const useCreate = factory.useCreateValue({}, { shouldDestroy: false })
 
     await useCreate({}, async (create) => {
       const result = await create()
@@ -162,9 +166,9 @@ describe('useCreateFn', () => {
 
 describe('useValueFn', () => {
   test('without dependencies or attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useValue = factory.useValueFn({})
+    const useValue = factory.useValue({})
 
     await useValue({}, async (value) => {
       expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
@@ -175,9 +179,9 @@ describe('useValueFn', () => {
   })
 
   test('with dependencies', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useValue = factory.useValueFn({})
+    const useValue = factory.useValue({})
 
     await useValue({ name: 'Hannah', accountId: 27 }, async (value) => {
       expect(value).toStrictEqual({ name: 'Hannah', accountId: 27 })
@@ -188,9 +192,9 @@ describe('useValueFn', () => {
   })
 
   test('with attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useValue = factory.useValueFn({ name: 'Zachary', accountId: 99 })
+    const useValue = factory.useValue({ name: 'Zachary', accountId: 99 })
 
     await useValue({}, async (value) => {
       expect(value).toStrictEqual({ name: 'Zachary', accountId: 99 })
@@ -202,9 +206,9 @@ describe('useValueFn', () => {
   })
 
   test('with dependencies and attributes', async ({ expect }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useValue = factory.useValueFn({ name: 'Zoe' })
+    const useValue = factory.useValue({ name: 'Zoe' })
 
     await useValue({ accountId: 42 }, async (value) => {
       expect(value).toStrictEqual({ name: 'Zoe', accountId: 42 })
@@ -218,9 +222,9 @@ describe('useValueFn', () => {
   test('should not destroy values if shouldDestroy is false', async ({
     expect,
   }) => {
-    const { factory, state } = createFactory()
+    const { factory, state } = getFactory()
 
-    const useValue = factory.useValueFn({}, { shouldDestroy: false })
+    const useValue = factory.useValue({}, { shouldDestroy: false })
 
     await useValue({}, async (value) => {
       expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
@@ -239,20 +243,18 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const accountFactory = defineFactory(
-    'Account',
-    {
+  const accountFactory = createFactory('Account')
+    .withSchema((f) => ({
       name: f.type<string>().optional(),
-    },
-    async ({ name }) => {
+    }))
+    .withFn(async ({ name }) => {
       return {
         value: {
           id: Math.floor(Math.random() * 10000000),
           name: name ?? 'Test Account',
         },
       }
-    },
-  )
+    })
 
   type Person = {
     id: number
@@ -260,35 +262,34 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const personFactory = defineFactory(
-    'Person',
-    {
+  const personFactory = createFactory('Person')
+    .withContext<{ account?: Account }>()
+    .withSchema((f) => ({
+      id: f.type<number>().default(Math.floor(Math.random() * 10000000)),
       accountId: f
         .type<number>()
-        .useContext(
-          ({ account }: { account?: Pick<Account, 'id'> }) => account?.id,
-        ),
-      name: f.type<string>().optional(),
-    },
-    ({ accountId, name }) => {
+        .dependsOn('account')
+        .use(({ account }) => account?.id),
+      name: f.type<string>().default('Test Person'),
+    }))
+    .withFn(({ id, accountId, name }) => {
       const person: Person = {
-        id: Math.floor(Math.random() * 10000000),
-        accountId: accountId,
-        name: name ?? 'Test Person',
+        id,
+        accountId,
+        name,
       }
 
       return {
         value: person,
       }
-    },
-  )
+    })
 
   const myTest = test.extend({
-    account: accountFactory.useValueFn({}),
-    person: personFactory.useValueFn({}),
+    account: accountFactory.useValue({}),
+    person: personFactory.useValue({}),
 
-    createAccount: accountFactory.useCreateFn(),
-    createPerson: personFactory.useCreateFn(),
+    createAccount: accountFactory.useCreateValue(),
+    createPerson: personFactory.useCreateValue(),
   })
 
   myTest(

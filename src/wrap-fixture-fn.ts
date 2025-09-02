@@ -1,9 +1,6 @@
-import type { AnySchema } from './types.js'
+import type { AnySchema, VitestFixtureFn } from './types.js'
 
 import { getFixtureList } from './schema-utils.js'
-
-// biome-ignore lint/suspicious/noExplicitAny: this is ok
-type AnyFn = (...args: any[]) => any
 
 /*
  * https://vitest.dev/guide/test-context.html#test-extend
@@ -19,12 +16,13 @@ type AnyFn = (...args: any[]) => any
  * test('', (deps) => { deps.todos })
  */
 
-const wrapFixtureFn = <S extends AnySchema, Fn extends AnyFn>(
+const wrapFixtureFn = <C extends object, S extends AnySchema, V>(
   schema: S,
-  fn: Fn,
-): Fn => {
-  const wrapped = ((...args: Parameters<Fn>): ReturnType<Fn> =>
-    fn(...args)) as Fn
+  fn: VitestFixtureFn<C, V>,
+): VitestFixtureFn<C, V> => {
+  const wrapped: VitestFixtureFn<C, V> = (...args) => {
+    return fn(...args)
+  }
 
   // compute the dep list from your schema
   const fixtureList = getFixtureList(schema)

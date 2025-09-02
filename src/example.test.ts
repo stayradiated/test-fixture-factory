@@ -1,17 +1,15 @@
 import { test as anyTest, describe } from 'vitest'
 
-import { defineFactory } from './define-factory.js'
-import { f } from './field-builder.js'
+import { createFactory } from './create-factory.js'
 
 type Author = { id: number; name: string }
 
-const authorFactory = defineFactory(
-  'Author',
-  {
+const authorFactory = createFactory('Author')
+  .withSchema((f) => ({
     id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
     name: f.type<string>(),
-  },
-  async (attrs) => {
+  }))
+  .withFn(async (attrs) => {
     const { id, name } = attrs
 
     const value: Author = {
@@ -20,23 +18,23 @@ const authorFactory = defineFactory(
     }
 
     return { value }
-  },
-)
+  })
 
-const { useCreateFn: useCreateAuthor, useValueFn: useAuthor } = authorFactory
+const { useCreateValue: useCreateAuthor, useValue: useAuthor } = authorFactory
 
 type Book = { id: number; title: string; authorId: number }
 
-const bookFactory = defineFactory(
-  'Book',
-  {
+const bookFactory = createFactory('Book')
+  .withContext<{ author?: Pick<Author, 'id'> }>()
+  .withSchema((f) => ({
     authorId: f
       .type<number>()
-      .useContext(({ author }: { author?: Pick<Author, 'id'> }) => author?.id),
+      .dependsOn('author')
+      .use(({ author }) => author?.id),
     id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
-  },
-  async (attrs) => {
+  }))
+  .withFn(async (attrs) => {
     const { id, authorId, title } = attrs
 
     const value: Book = {
@@ -44,10 +42,11 @@ const bookFactory = defineFactory(
       title: title,
       authorId,
     }
+
     return { value }
-  },
-)
-const { useCreateFn: useCreateBook, useValueFn: useBook } = bookFactory
+  })
+
+const { useCreateValue: useCreateBook, useValue: useBook } = bookFactory
 
 describe('useValue', () => {
   const test = anyTest.extend({
