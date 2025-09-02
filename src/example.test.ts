@@ -6,7 +6,7 @@ type Author = { id: number; name: string }
 
 const authorFactory = createFactory('Author')
   .withSchema((f) => ({
-    id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
+    id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     name: f.type<string>(),
   }))
   .withFn(async (attrs) => {
@@ -30,8 +30,8 @@ const bookFactory = createFactory('Book')
     authorId: f
       .type<number>()
       .dependsOn('author')
-      .use(({ author }) => author?.id),
-    id: f.type<number>().default(Math.floor(Math.random() * 1_000_000)),
+      .optionalDefault(({ author }) => author?.id),
+    id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
   }))
   .withFn(async (attrs) => {

@@ -15,15 +15,12 @@ const getFactory = () => {
     .withSchema((f) => ({
       name: f
         .type<string>()
-        .default('Unknown')
         .dependsOn('name')
-        .use(({ name }) => name),
-
+        .default(({ name }) => name ?? 'Unknown'),
       accountId: f
         .type<number>()
-        .default(-1)
         .dependsOn('accountId')
-        .use(({ accountId }) => accountId),
+        .default(({ accountId }) => accountId ?? -1),
     }))
     .withFn((attrs) => {
       const { name, accountId } = attrs
@@ -245,13 +242,14 @@ describe('vitest.extend', () => {
 
   const accountFactory = createFactory('Account')
     .withSchema((f) => ({
-      name: f.type<string>().optional(),
+      id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
+      name: f.type<string>().default('Test Account'),
     }))
-    .withFn(async ({ name }) => {
+    .withFn(async ({ id, name }) => {
       return {
         value: {
-          id: Math.floor(Math.random() * 10000000),
-          name: name ?? 'Test Account',
+          id,
+          name,
         },
       }
     })
@@ -265,11 +263,11 @@ describe('vitest.extend', () => {
   const personFactory = createFactory('Person')
     .withContext<{ account?: Account }>()
     .withSchema((f) => ({
-      id: f.type<number>().default(Math.floor(Math.random() * 10000000)),
+      id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
       accountId: f
         .type<number>()
         .dependsOn('account')
-        .use(({ account }) => account?.id),
+        .optionalDefault(({ account }) => account?.id),
       name: f.type<string>().default('Test Person'),
     }))
     .withFn(({ id, accountId, name }) => {
