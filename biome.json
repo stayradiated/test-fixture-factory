@@ -37,7 +37,8 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noConfusingVoidType": "off"
+        "noConfusingVoidType": "off",
+        "noExplicitAny": "off"
       },
       "style": {
         "noInferrableTypes": "error",

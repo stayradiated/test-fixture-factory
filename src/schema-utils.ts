@@ -1,13 +1,30 @@
+import type { NewFieldBuilder } from './field.js'
 import type {
-  AnyField,
   AnySchema,
-  AttrsOf,
-  DepsOf,
-  InputAttrsOf,
-  Voidable,
+  AnySchemaBuilderWithContext,
+  AnySchemaWithContext,
+  FieldOf,
+  MissingField,
+  OutputOf,
+  Prettify,
+  SchemaOf,
+  VoidableInputOf,
 } from './types.js'
 
-type AnyReadableSchema = Record<string, AnyField>
+import { createFieldBuilder } from './field.js'
+
+const createSchema = <Context extends object = object>() => ({
+  empty: () => {
+    return {}
+  },
+  with: <SchemaBuilder extends AnySchemaBuilderWithContext<Context>>(
+    schemaFn: (f: NewFieldBuilder<Context>) => SchemaBuilder,
+  ): Prettify<SchemaOf<SchemaBuilder>> => {
+    return schemaFn(
+      createFieldBuilder<Context>(),
+    ) as unknown as SchemaOf<SchemaBuilder>
+  },
+})
 
 const deleteUndefinedKeys = <T>(value: T): T => {
   for (const key in value) {
@@ -20,11 +37,17 @@ const deleteUndefinedKeys = <T>(value: T): T => {
 
 const schemaEntries = <S extends AnySchema>(
   s: S,
-): Array<[string, AnyField]> => {
-  return Object.entries(s as unknown as AnyReadableSchema)
+): Array<[string, FieldOf<S>]> => {
+  return Object.entries(s).map(([key, value]) => [
+    key,
+    (value as unknown as { state: FieldOf<S> }).state,
+  ])
 }
-const schemaValues = <S extends AnySchema>(s: S): Array<AnyField> => {
-  return Object.values(s as unknown as AnyReadableSchema)
+
+const schemaValues = <S extends AnySchema>(s: S): Array<FieldOf<S>> => {
+  return Object.values(s).map(
+    (value) => (value as unknown as { state: FieldOf<S> }).state,
+  )
 }
 
 const resolveDefaultValues = <S extends AnySchema>(schema: S) => {
@@ -37,15 +60,21 @@ const resolveDefaultValues = <S extends AnySchema>(schema: S) => {
   )
 }
 
-const resolveDeps = <S extends AnySchema>(schema: S, deps: DepsOf<S>) => {
+const resolveFixtures = <
+  Context extends object,
+  Schema extends AnySchemaWithContext<Context>,
+>(
+  schema: Schema,
+  context: Context,
+) => {
   return deleteUndefinedKeys(
     Object.fromEntries(
       schemaEntries(schema)
         .filter(([_key, value]) => {
-          return typeof value.context?.getValue === 'function'
+          return typeof value.fromContext === 'function'
         })
         .map(([key, value]) => {
-          return [key, value.context?.getValue?.(deps)]
+          return [key, value.fromContext?.(context)]
         }),
     ),
   )
@@ -53,43 +82,49 @@ const resolveDeps = <S extends AnySchema>(schema: S, deps: DepsOf<S>) => {
 
 const validateSchemaData = <S extends AnySchema>(
   schema: S,
-  data: AttrsOf<S>,
-): [string, AnyField][] => {
-  return schemaEntries(schema).filter(([key, field]) => {
-    // ignore optional fields
-    if (!field.isRequired) {
-      return false
-    }
-    // ignore fields that are already defined
-    if (typeof data[key] !== 'undefined') {
-      return false
-    }
-    return true
-  })
+  data: OutputOf<S>,
+): MissingField[] => {
+  return schemaEntries(schema)
+    .filter(([key, field]) => {
+      // ignore optional fields
+      if (!field.isRequired) {
+        return false
+      }
+      // ignore fields that are already defined
+      if (typeof data[key] !== 'undefined') {
+        return false
+      }
+      return true
+    })
+    .map(([key, field]) => ({
+      key,
+      fixtureList: field.fixtureList,
+    }))
 }
 
-const resolveSchema = <S extends AnySchema>(
-  schema: S,
-  deps: DepsOf<S>,
-  attrs: Voidable<InputAttrsOf<S>>,
+const resolveSchema = <
+  Context extends object,
+  Schema extends AnySchemaWithContext<Context>,
+>(
+  schema: Schema,
+  context: Context,
+  attrs: VoidableInputOf<Schema>,
 ) => {
   const result = {
     ...resolveDefaultValues(schema),
-    ...resolveDeps(schema, deps),
+    ...resolveFixtures(schema, context),
     ...deleteUndefinedKeys({ ...attrs }),
-  } as AttrsOf<S>
+  } as OutputOf<Schema>
 
   return result
 }
 
-const getFixtureList = <S extends AnySchema>(schema: S): string[] => {
+const getFixtureList = <Schema extends AnySchema>(schema: Schema): string[] => {
   const set = new Set<string>([])
 
   for (const field of schemaValues(schema)) {
-    if (field.context) {
-      for (const fixtureList of field.context.fixtureList) {
-        set.add(fixtureList)
-      }
+    for (const fixtureList of field.fixtureList) {
+      set.add(fixtureList)
     }
   }
 
@@ -97,4 +132,4 @@ const getFixtureList = <S extends AnySchema>(schema: S): string[] => {
   return list
 }
 
-export { resolveSchema, validateSchemaData, getFixtureList }
+export { createSchema, resolveSchema, validateSchemaData, getFixtureList }

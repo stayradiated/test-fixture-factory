@@ -1,7 +1,7 @@
 import { describe, test } from 'vitest'
 
-import { f } from './field-builder.js'
 import {
+  createSchema,
   getFixtureList,
   resolveSchema,
   validateSchemaData,
@@ -9,11 +9,11 @@ import {
 
 describe('resolveSchema', () => {
   test('should resolve default values', ({ expect }) => {
-    const schema = {
+    const schema = createSchema().with((f) => ({
       a: f.type<number>().default(1),
       b: f.type<number>().default(2),
       c: f.type<number>().default(3),
-    }
+    }))
 
     const result = resolveSchema(schema, {}, {})
 
@@ -25,11 +25,22 @@ describe('resolveSchema', () => {
   })
 
   test('should resolve deps', ({ expect }) => {
-    const schema = {
-      a: f.type<number>().useContext(({ a }: { a: number }) => a),
-      b: f.type<number>().useContext(({ b }: { b: number }) => b),
-      c: f.type<number>().useContext(({ c }: { c: number }) => c),
-    }
+    const schema = createSchema<{ a: number; b: number; c: number }>().with(
+      (f) => ({
+        a: f
+          .type<number>()
+          .dependsOn('a')
+          .use(({ a }) => a),
+        b: f
+          .type<number>()
+          .dependsOn('b')
+          .use(({ b }) => b),
+        c: f
+          .type<number>()
+          .dependsOn('c')
+          .use(({ c }) => c),
+      }),
+    )
 
     const result = resolveSchema(schema, { a: 1, b: 2, c: 3 }, {})
 
@@ -41,11 +52,11 @@ describe('resolveSchema', () => {
   })
 
   test('should resolve attrs', ({ expect }) => {
-    const schema = {
+    const schema = createSchema().with((f) => ({
       a: f.type<number>(),
       b: f.type<number>(),
       c: f.type<number>(),
-    }
+    }))
 
     const result = resolveSchema(schema, {}, { a: 1, b: 2, c: 3 })
 
@@ -59,11 +70,11 @@ describe('resolveSchema', () => {
 
 describe('validateSchemaData', () => {
   test('should validate schema data', ({ expect }) => {
-    const schema = {
+    const schema = createSchema().with((f) => ({
       a: f.type<number>(),
       b: f.type<number>(),
       c: f.type<number>(),
-    }
+    }))
 
     const result = validateSchemaData(schema, { a: 1, b: 2, c: 3 })
 
@@ -71,11 +82,11 @@ describe('validateSchemaData', () => {
   })
 
   test('should validate schema data with missing fields', ({ expect }) => {
-    const schema = {
+    const schema = createSchema().with((f) => ({
       a: f.type<number>(),
       b: f.type<number>(),
       c: f.type<number>(),
-    }
+    }))
 
     const result = validateSchemaData(schema, {
       a: 1,
@@ -83,17 +94,29 @@ describe('validateSchemaData', () => {
       c: undefined as unknown as number,
     })
 
-    expect(result).toStrictEqual([['c', schema.c]])
+    expect(result).toStrictEqual([
+      {
+        key: 'c',
+        fixtureList: [],
+      },
+    ])
   })
 })
 
 describe('getFixtureList', () => {
   test('should get fixture list', ({ expect }) => {
-    const schema = {
-      a: f.type<number>().useContext(({ a }: { a: number }) => a),
-      b: f.type<number>().useContext(({ b }: { b: number }) => b),
-      c: f.type<number>().useContext(({ c }: { c: number }) => c),
-    }
+    const schema = createSchema<{ a: number; b: number; c: number }>().with(
+      (f) => ({
+        a: f
+          .type<number>()
+          .dependsOn('a')
+          .use(({ a }) => a),
+        bc: f
+          .type<number>()
+          .dependsOn('b', 'c')
+          .use(({ b, c }) => b + c),
+      }),
+    )
 
     const result = getFixtureList(schema)
 

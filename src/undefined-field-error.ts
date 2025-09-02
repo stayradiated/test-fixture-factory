@@ -1,7 +1,7 @@
-import type { AnyField } from './types.js'
+import type { MissingField } from './types.js'
 
-const formatMissingField = ([key, field]: [string, AnyField]): string => {
-  const fixtureList = field.context?.fixtureList ?? []
+const formatMissingField = (field: MissingField): string => {
+  const { key, fixtureList } = field
 
   if (fixtureList.length === 0) {
     return `- ${key}: must be provided as an attribute`
@@ -11,7 +11,7 @@ const formatMissingField = ([key, field]: [string, AnyField]): string => {
 }
 
 class UndefinedFieldError extends Error {
-  constructor(name: string, missingFields: [string, AnyField][]) {
+  constructor(name: string, missingFields: MissingField[]) {
     const count = missingFields.length
 
     super(
