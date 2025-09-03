@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete rewrite with a **fluent, schema-first API**
 - Strong, readable **TypeScript inference** end-to-end
 - Explicit, typed **context reads** with `.from(...)` / `.maybeFrom(...)`
-- Clear **errors** with factory names and missing-field details
+- Automatic **UndefinedFieldError** for factory names and missing-field details
 - Sensible **fixture lifecycle** (auto-destroy by default, overridable)
 
 ### 🔥 Breaking Changes
@@ -26,22 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Changed**: `.default(value | () => value)` is pure (no context argument)
   - **Removed**: `.dependsOn(...)`, `.optionalDefault(...)`
 - **Fixture helpers**: `useValueFn` → **`useValue`**, `useCreateFn` → **`useCreateValue`**.
-- **Build signature**: `build(context, attrs)` → **`build(attrs?, context?)`**.
-
-### ✅ Runtime & Env
-
-- **Node.js ≥ 24** (see `package.json` `engines.node`)
-- ESM build (`"type": "module"`)
-- `TFF_SKIP_DESTROY` (truthy) disables auto-destroy; per-fixture override via `{ shouldDestroy: false }`.
-
-### 🧠 Error Handling
-
-- `UndefinedFieldError` lists missing required fields and which fixtures could satisfy them.
-
-### 🛠 Internals
-
-- Simplified schema resolution order (defaults → context reads → presets → call-time attrs)
-- `wrapFixtureFn` ensures Vitest “sees” destructured fixtures
+- **Build signature**: `defineFactory(...)(context, attrs)` → **`createFactory(...).build(attrs?, context?)`**.
 
 ## [1.x.x] - Previous Versions
 
