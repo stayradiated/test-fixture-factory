@@ -106,14 +106,14 @@ type ValueOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
   ? Value
   : never
 
-// does this field have any fixtures it depends on?
+// extract the fixtures of a field
 type FixturesOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
   infer Fixtures,
   infer _V,
   infer _F
 >
-  ? keyof Fixtures
-  : false
+  ? Fixtures
+  : never
 
 // get the flag of a field
 type FlagOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
@@ -185,6 +185,20 @@ type InferFixtureValue<T> = T extends () => VitestFixtureFn<
   ? Value
   : never
 
+// If you want to work with the Schema type directly
+type SetSchemaFieldsOptional<
+  Schema extends AnySchema,
+  Keys extends keyof Schema,
+> = {
+  [K in keyof Schema]: K extends Keys
+    ? Field<
+        FixturesOf<Schema, K>,
+        ValueOf<Schema, K>,
+        'optional' // Force the flag to optional for these keys
+      >
+    : Schema[K]
+}
+
 export type {
   AnyField,
   AnySchema,
@@ -195,7 +209,6 @@ export type {
   FactoryOptions,
   Field,
   FieldOf,
-  FixturesOf,
   FlagOf,
   InferFixtureValue,
   InputOf,
@@ -209,6 +222,7 @@ export type {
   RequiredInputKeysOf,
   RequiredOutputKeysOf,
   SchemaOf,
+  SetSchemaFieldsOptional,
   ValueOf,
   VitestFixtureFn,
   VoidableInputOf,

@@ -1,7 +1,6 @@
 import { describe, expectTypeOf, test } from 'vitest'
 
 import type {
-  FixturesOf,
   FlagOf,
   InputOf,
   OptionalInputKeysOf,
@@ -85,39 +84,6 @@ describe('FlagOf<S, K>', () => {
     }))
     type Actual = FlagOf<typeof schema, 'name'>
     type Expected = 'optional'
-    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
-  })
-})
-
-describe('FixturesOf<S, K>', () => {
-  test('no dependencies', () => {
-    const schema = createSchema().with((f) => ({
-      name: f.type<string>(),
-    }))
-    type Actual = FixturesOf<typeof schema, 'name'>
-    type Expected = never
-    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
-  })
-
-  test('has dependencies', () => {
-    const schema = createSchema<{ name?: string }>().with((f) => ({
-      name: f.type<string>().optional().from('name'),
-    }))
-    type Actual = FixturesOf<typeof schema, 'name'>
-    type Expected = 'name'
-    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
-  })
-
-  test('multiple dependencies', () => {
-    const schema = createSchema<{ name?: string; age?: number }>().with(
-      (f) => ({
-        person: f
-          .type<string>()
-          .from(['name', 'age'], ({ name, age }) => `${name} ${age}`),
-      }),
-    )
-    type Actual = FixturesOf<typeof schema, 'person'>
-    type Expected = 'name' | 'age'
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 })

@@ -100,7 +100,7 @@ describe('useValue with attributes', () => {
 
 describe('useCreate', () => {
   const test = anyTest.extend({
-    createAuthor: useCreateAuthor(),
+    createAuthor: useCreateAuthor({ name: 'Default' }),
     createBook: useCreateBook(),
   })
 
@@ -139,7 +139,7 @@ describe('useCreate', () => {
 
   describe('InferFixtureValue', () => {
     const createSummary = async (
-      createAuthor: InferFixtureValue<typeof useCreateAuthor>,
+      createAuthor: InferFixtureValue<typeof useCreateAuthor<{ name: string }>>,
       createBook: InferFixtureValue<typeof useCreateBook>,
     ) => {
       const author = await createAuthor({ name: 'A. Nonymous' })
