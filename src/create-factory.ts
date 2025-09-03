@@ -10,6 +10,7 @@ import type {
   OutputOf,
   Prettify,
   SchemaOf,
+  SetSchemaFieldsOptional,
   VitestFixtureFn,
   VoidableInputOf,
 } from './types.js'
@@ -95,7 +96,10 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     { shouldDestroy }: FactoryOptions = defaultFactoryOptions,
   ): VitestFixtureFn<
     Context,
-    CreateFn<Omit<Schema, keyof PresetAttrs>, Value>
+    CreateFn<
+      SetSchemaFieldsOptional<Schema, keyof PresetAttrs & keyof Schema>,
+      Value
+    >
   > {
     const { name, schema, factoryFn } = this.state
 
@@ -107,6 +111,8 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
       const destroyList: DestroyFn[] = []
 
       await use((async (attrs) => {
+        // Merge preset attributes with provided attributes
+        // Provided attributes override preset attributes
         const data = resolveSchema(schema, context, {
           ...(presetAttrs ?? {}),
           ...attrs,
@@ -124,7 +130,10 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
         }
 
         return value
-      }) satisfies CreateFn<Omit<Schema, keyof PresetAttrs>, Value>)
+      }) satisfies CreateFn<
+        SetSchemaFieldsOptional<Schema, keyof PresetAttrs & keyof Schema>,
+        Value
+      >)
 
       if (shouldDestroy) {
         for (const destroy of destroyList) {
