@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, test } from 'vitest'
 
 import type {
+  EmptySchema,
   FlagOf,
   InputOf,
   OptionalInputKeysOf,
@@ -38,8 +39,7 @@ describe('OutputOf<S>', () => {
   test('empty schema', () => {
     const schema = createSchema().empty()
     type Actual = OutputOf<typeof schema>
-    // biome-ignore lint/complexity/noBannedTypes: it is what it is
-    type Expected = {}
+    type Expected = EmptySchema
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 
@@ -153,6 +153,13 @@ describe('RequiredOutputKeysOf<S>', () => {
 })
 
 describe('OptionalInputKeysOf<S>', () => {
+  test('empty schema', () => {
+    const schema = createSchema().empty()
+    type Actual = OptionalInputKeysOf<typeof schema>
+    type Expected = never
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
   test('no optional keys', () => {
     const schema = createSchema().with((f) => ({
       name: f.type<string>(),
@@ -195,6 +202,13 @@ describe('OptionalInputKeysOf<S>', () => {
 })
 
 describe('RequiredInputKeysOf<S>', () => {
+  test('empty schema', () => {
+    const schema = createSchema().empty()
+    type Actual = RequiredInputKeysOf<typeof schema>
+    type Expected = never
+    expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+  })
+
   test('all required keys', () => {
     const schema = createSchema().with((f) => ({
       name: f.type<string>(),
@@ -240,8 +254,7 @@ describe('InputOf<S>', () => {
   test('empty schema', () => {
     const schema = createSchema().empty()
     type Actual = InputOf<typeof schema>
-    // biome-ignore lint/complexity/noBannedTypes: it is what it is
-    type Expected = {}
+    type Expected = EmptySchema
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 
@@ -287,8 +300,7 @@ describe('VoidableInputOf<S>', () => {
   test('no fields', () => {
     const schema = createSchema().empty()
     type Actual = VoidableInputOf<typeof schema>
-    // biome-ignore lint/complexity/noBannedTypes: it is what it is
-    type Expected = {} | void
+    type Expected = void | EmptySchema
     expectTypeOf<Actual>().toEqualTypeOf<Expected>()
   })
 

@@ -57,6 +57,7 @@ type AnyFieldWithContext<Context extends object> = Field<Context, any, any>
 type FieldOf<Schema extends AnySchema> = Schema[keyof Schema]
 
 type AnySchema = Record<string, AnyFieldWithContext<any>>
+type EmptySchema = Record<string, never>
 
 type AnySchemaWithContext<Context extends object> = Record<
   string,
@@ -147,22 +148,25 @@ type OptionalInputKeysOf<S extends AnySchema> = {
 }[keyof S]
 
 // keys that are required in INPUT (not optional and no dep)
-type RequiredInputKeysOf<S extends AnySchema> = Exclude<
-  keyof S,
-  OptionalInputKeysOf<S>
->
+type RequiredInputKeysOf<S extends AnySchema> = S extends EmptySchema
+  ? never
+  : Exclude<keyof S, OptionalInputKeysOf<S>>
 
 // type attrs to be provided by the test
 // any attrs that are marked as 'optional' will be optional
 // any attrs that may be resolved from context are also optional
-type InputOf<S extends AnySchema> = Prettify<
-  { [K in RequiredInputKeysOf<S>]: ValueOf<S, K> } & {
-    [K in OptionalInputKeysOf<S>]?: ValueOf<S, K>
-  }
->
+type InputOf<S extends AnySchema> = S extends EmptySchema
+  ? EmptySchema
+  : Prettify<
+      { [K in RequiredInputKeysOf<S>]: ValueOf<S, K> } & {
+        [K in OptionalInputKeysOf<S>]?: ValueOf<S, K>
+      }
+    >
 
 // type of attrs that will be provided to the factory fn
-type OutputOf<S extends AnySchema> = { [K in keyof S]: ValueOf<S, K> }
+type OutputOf<S extends AnySchema> = S extends EmptySchema
+  ? EmptySchema
+  : { [K in keyof S]: ValueOf<S, K> }
 
 type VoidableInputOf<Schema extends AnySchema> =
   RequiredInputKeysOf<Schema> extends never
@@ -205,6 +209,7 @@ export type {
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
   DestroyFn,
+  EmptySchema,
   FactoryFn,
   FactoryOptions,
   Field,
