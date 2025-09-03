@@ -7,6 +7,7 @@ import type {
   FactoryOptions,
   InputOf,
   OutputOf,
+  Prettify,
   SchemaOf,
   VitestFixtureFn,
   VoidableInputOf,
@@ -28,7 +29,7 @@ const defaultFactoryOptions: FactoryOptions = {
 type FactoryState<S extends AnySchema, V> = {
   name: string
   schema: S
-  factoryFn: FactoryFn<OutputOf<S>, V> | undefined
+  factoryFn: FactoryFn<Prettify<OutputOf<S>>, V> | undefined
 }
 
 type CreateFn<Schema extends AnySchema, Value> = (
@@ -58,7 +59,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  withFn<Value>(factoryFn: FactoryFn<OutputOf<Schema>, Value>) {
+  withValue<Value>(factoryFn: FactoryFn<Prettify<OutputOf<Schema>>, Value>) {
     return new FactoryBuilder<Context, Schema, Value>({
       ...this.state,
       factoryFn,
@@ -69,7 +70,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { name, schema, factoryFn } = this.state
 
     if (!factoryFn) {
-      throw new Error('.withFn() must be called before .build()')
+      throw new Error('.withValue() must be called before .build()')
     }
 
     const data = resolveSchema(schema, context, attrs)
@@ -93,7 +94,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { name, schema, factoryFn } = this.state
 
     if (!factoryFn) {
-      throw new Error('.withFn() must be called before .useCreateValue()')
+      throw new Error('.withValue() must be called before .useCreateValue()')
     }
 
     return wrapFixtureFn(schema, async (context, use) => {
@@ -135,7 +136,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { shouldDestroy } = options
 
     if (!factoryFn) {
-      throw new Error('.withFn() must be called before .useValue()')
+      throw new Error('.withValue() must be called before .useValue()')
     }
 
     return wrapFixtureFn(schema, async (context, use) => {

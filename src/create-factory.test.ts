@@ -22,7 +22,7 @@ const getFactory = () => {
         .dependsOn('accountId')
         .default(({ accountId }) => accountId ?? -1),
     }))
-    .withFn((attrs) => {
+    .withValue((attrs) => {
       const { name, accountId } = attrs
 
       const value = {
@@ -245,7 +245,7 @@ describe('vitest.extend', () => {
       id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
       name: f.type<string>().default('Test Account'),
     }))
-    .withFn(async ({ id, name }) => {
+    .withValue(async ({ id, name }) => {
       return {
         value: {
           id,
@@ -270,7 +270,7 @@ describe('vitest.extend', () => {
         .optionalDefault(({ account }) => account?.id),
       name: f.type<string>().default('Test Person'),
     }))
-    .withFn(({ id, accountId, name }) => {
+    .withValue(({ id, accountId, name }) => {
       const person: Person = {
         id,
         accountId,
