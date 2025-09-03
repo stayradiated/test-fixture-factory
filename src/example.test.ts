@@ -9,7 +9,7 @@ const authorFactory = createFactory('Author')
     id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     name: f.type<string>(),
   }))
-  .withFn(async (attrs) => {
+  .withValue(async (attrs) => {
     const { id, name } = attrs
 
     const value: Author = {
@@ -34,7 +34,7 @@ const bookFactory = createFactory('Book')
     id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
   }))
-  .withFn(async (attrs) => {
+  .withValue(async (attrs) => {
     const { id, authorId, title } = attrs
 
     const value: Book = {
