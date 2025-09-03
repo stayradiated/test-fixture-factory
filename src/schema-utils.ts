@@ -3,6 +3,7 @@ import type {
   AnySchema,
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
+  EmptySchema,
   FieldOf,
   MissingField,
   OutputOf,
@@ -14,7 +15,7 @@ import type {
 import { createFieldBuilder } from './field.js'
 
 const createSchema = <Context extends object = object>() => ({
-  empty: () => {
+  empty: (): EmptySchema => {
     return {}
   },
   with: <SchemaBuilder extends AnySchemaBuilderWithContext<Context>>(

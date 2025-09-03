@@ -3,6 +3,7 @@ import type {
   AnySchema,
   AnySchemaBuilderWithContext,
   DestroyFn,
+  EmptySchema,
   FactoryFn,
   FactoryOptions,
   InputOf,
@@ -175,7 +176,7 @@ const createFactory = (name: string) => {
     throw new Error('createFactory: name should be a non-empty string')
   }
 
-  return new FactoryBuilder<object, AnySchema, unknown>({
+  return new FactoryBuilder<object, EmptySchema, unknown>({
     name,
     schema: {},
     factoryFn: undefined,
