@@ -15,12 +15,12 @@ const getFactory = () => {
     .withSchema((f) => ({
       name: f
         .type<string>()
-        .dependsOn('name')
-        .default(({ name }) => name ?? 'Unknown'),
+        .maybeFrom('name', ({ name }) => name)
+        .default('Unknown'),
       accountId: f
         .type<number>()
-        .dependsOn('accountId')
-        .default(({ accountId }) => accountId ?? -1),
+        .maybeFrom('accountId', ({ accountId }) => accountId)
+        .default(-1),
     }))
     .withValue((attrs) => {
       const { name, accountId } = attrs
@@ -44,7 +44,54 @@ const getFactory = () => {
   }
 }
 
-describe('useCreateFn', () => {
+describe('build', () => {
+  test('without dependencies or attributes', async ({ expect }) => {
+    const { factory, state } = getFactory()
+    const { value, destroy } = await factory.build()
+
+    expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
+    expect(state.isDestroyed).toBe(false)
+
+    await destroy()
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('with dependencies', async ({ expect }) => {
+    const { factory, state } = getFactory()
+    const { value, destroy } = await factory.build(
+      {},
+      {
+        name: 'Gregg',
+        accountId: 33,
+      },
+    )
+
+    expect(value).toStrictEqual({ name: 'Gregg', accountId: 33 })
+    expect(state.isDestroyed).toBe(false)
+
+    await destroy()
+
+    expect(state.isDestroyed).toBe(true)
+  })
+
+  test('with attributes', async ({ expect }) => {
+    const { factory, state } = getFactory()
+    const { value, destroy } = await factory.build({
+      name: 'Joseph',
+      accountId: 42,
+    })
+
+    expect(value).toStrictEqual({ name: 'Joseph', accountId: 42 })
+    expect(state.isDestroyed).toBe(false)
+
+    await destroy()
+
+    expect(state.isDestroyed).toBe(true)
+  })
+})
+
+describe('useCreateValue', () => {
   test('without dependencies or attributes', async ({ expect }) => {
     const { factory, state } = getFactory()
 
@@ -161,7 +208,7 @@ describe('useCreateFn', () => {
   })
 })
 
-describe('useValueFn', () => {
+describe('useValue', () => {
   test('without dependencies or attributes', async ({ expect }) => {
     const { factory, state } = getFactory()
 
@@ -266,8 +313,7 @@ describe('vitest.extend', () => {
       id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
       accountId: f
         .type<number>()
-        .dependsOn('account')
-        .optionalDefault(({ account }) => account?.id),
+        .maybeFrom('account', ({ account }) => account?.id),
       name: f.type<string>().default('Test Person'),
     }))
     .withValue(({ id, accountId, name }) => {

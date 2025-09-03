@@ -1,5 +1,7 @@
 import { test as anyTest, describe } from 'vitest'
 
+import type { InferFixtureValue } from './types.js'
+
 import { createFactory } from './create-factory.js'
 
 type Author = { id: number; name: string }
@@ -27,10 +29,7 @@ type Book = { id: number; title: string; authorId: number }
 const bookFactory = createFactory('Book')
   .withContext<{ author?: Pick<Author, 'id'> }>()
   .withSchema((f) => ({
-    authorId: f
-      .type<number>()
-      .dependsOn('author')
-      .optionalDefault(({ author }) => author?.id),
+    authorId: f.type<number>().maybeFrom('author', ({ author }) => author?.id),
     id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
   }))
@@ -101,12 +100,12 @@ describe('useValue with attributes', () => {
 
 describe('useCreate', () => {
   const test = anyTest.extend({
-    createAuthor: useCreateAuthor({ name: 'D. Adams' }),
+    createAuthor: useCreateAuthor(),
     createBook: useCreateBook(),
   })
 
   test('should create an author', async ({ createAuthor, expect }) => {
-    const author = await createAuthor({ id: 127 })
+    const author = await createAuthor({ id: 127, name: 'D. Adams' })
     expect(author).toStrictEqual({
       id: expect.any(Number),
       name: 'D. Adams',
@@ -114,9 +113,9 @@ describe('useCreate', () => {
   })
 
   test('should create a book', async ({ createAuthor, createBook, expect }) => {
-    const author = await createAuthor({})
-
+    const author = await createAuthor({ name: 'D. Adams' })
     const book = await createBook({ authorId: author.id })
+
     expect(book).toStrictEqual({
       id: expect.any(Number),
       title: 'Unknown',
@@ -129,13 +128,33 @@ describe('useCreate', () => {
     createBook,
     expect,
   }) => {
-    const author = await createAuthor({})
-
+    const author = await createAuthor({ name: 'D. Adams' })
     const book = await createBook({ title: 'The Book', authorId: author.id })
     expect(book).toStrictEqual({
       id: expect.any(Number),
       title: 'The Book',
       authorId: expect.any(Number),
+    })
+  })
+
+  describe('InferFixtureValue', () => {
+    const createSummary = async (
+      createAuthor: InferFixtureValue<typeof useCreateAuthor>,
+      createBook: InferFixtureValue<typeof useCreateBook>,
+    ) => {
+      const author = await createAuthor({ name: 'A. Nonymous' })
+      const book = await createBook({ id: 1, authorId: author.id })
+
+      return `[${book.id}] ${book.title} by ${author.name}`
+    }
+
+    test('should infer fixture value from factory fn', async ({
+      createAuthor,
+      createBook,
+      expect,
+    }) => {
+      const summary = await createSummary(createAuthor, createBook)
+      expect(summary).toBe('[1] Unknown by A. Nonymous')
     })
   })
 })

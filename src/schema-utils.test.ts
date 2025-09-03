@@ -27,18 +27,9 @@ describe('resolveSchema', () => {
   test('should resolve deps', ({ expect }) => {
     const schema = createSchema<{ a: number; b: number; c: number }>().with(
       (f) => ({
-        a: f
-          .type<number>()
-          .dependsOn('a')
-          .default(({ a }) => a),
-        b: f
-          .type<number>()
-          .dependsOn('b')
-          .default(({ b }) => b),
-        c: f
-          .type<number>()
-          .dependsOn('c')
-          .default(({ c }) => c),
+        a: f.type<number>().from('a'),
+        b: f.type<number>().from('b'),
+        c: f.type<number>().from('c'),
       }),
     )
 
@@ -107,14 +98,8 @@ describe('getFixtureList', () => {
   test('should get fixture list', ({ expect }) => {
     const schema = createSchema<{ a: number; b: number; c: number }>().with(
       (f) => ({
-        a: f
-          .type<number>()
-          .dependsOn('a')
-          .default(({ a }) => a),
-        bc: f
-          .type<number>()
-          .dependsOn('b', 'c')
-          .default(({ b, c }) => b + c),
+        a: f.type<number>().from('a'),
+        bc: f.type<number>().from(['b', 'c'], ({ b, c }) => b + c),
       }),
     )
 

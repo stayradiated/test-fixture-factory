@@ -1,287 +1,257 @@
 # test-fixture-factory
 
-`test-fixture-factory` is an NPM package designed to streamline the creation and management of test fixtures within TypeScript projects using **Vitest** [Test Contexts](https://vitest.dev/guide/test-context.html). This library leverages structured factory functions to generate test data and manage the lifecycle of these fixtures efficiently, making your tests more organized, repeatable, and maintainable.
+`test-fixture-factory` helps you create **typed, ergonomic test fixtures** for **Vitest** using a fluent factory API. Define attributes and defaults once, declare what can be read from the test context, and get clean fixtures with automatic teardown.
 
-## Table of Contents
+* ✅ **First-class TypeScript**: schema-driven, end-to-end inference
+* ✅ **Explicit context reads**: `.from()` / `.maybeFrom()` link fields to fixtures on the test context
+* ✅ **Lifecycle control**: auto-destroy by default, opt-out via env or per-fixture
+* ✅ **Great DX**: actionable errors (with factory names and missing fields)
 
-- [Installation](#installation)
-- [Features](#features)
-- [Why Use test-fixture-factory?](#why-use-test-fixture-factory)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-  - [Defining a Factory](#defining-a-factory)
-  - [Using Factories in Tests](#using-factories-in-tests)
-  - [Destroying Resources](#destroying-resources)
-- [API](#api)
-- [License](#license)
+> Works best with [Vitest Test Contexts](https://vitest.dev/guide/test-context.html). It can also be used outside Vitest via `factory.build(...)` for ad-hoc creation.
+
+---
 
 ## Installation
 
-To add `test-fixture-factory` to your project, run:
-
 ```bash
-npm add --save-dev test-fixture-factory
-```
+npm i -D test-fixture-factory
+````
 
-Ensure you have `vitest` set up as your test runner since this package is designed to work with it.
+**Requirements**
 
-## Features
+* Node.js 24+
+* TypeScript 5+
+* Vitest (or Playwright + fixture layer)
 
-- **Define Factories:** Easily define factories for creating fixtures with dependencies and attributes.
-- **Lifecycle Management:** Automatically manage the creation and destruction of test resources.
-- **Integration with Vitest:** Seamlessly integrates with Vitest's testing functions.
+---
 
-Here’s a brief example illustrating a feature:
-
-```typescript
-import { defineFactory } from 'test-fixture-factory';
-
-const companyFactory = defineFactory(async ({}, attrs: { name: string }) => {
-  const company = await prisma.company.create({
-    name: attrs.name,
-  });
-
-  return {
-    value: company,
-    destroy: async () => {
-      await prisma.company.delete({ where: { id: company.id } });
-    },
-  };
-});
-```
-
-## Why Use test-fixture-factory?
-
-Testing with accurate and meaningful data is crucial for ensuring that your code behaves as expected. `test-fixture-factory` simplifies the process of setting up data for tests by providing:
-
-- **Simplicity:** Avoid boilerplate code and manually setting up test data.
-- **Consistency:** Ensure that each test runs with predictable and manageable data setup.
-- **Isolation:** Prevent test case interference by cleaning up after tests automatically.
-- **Robustness:** Handle complex dependencies among fixtures with ease.
-
-## Getting Started
-
-### Requirements
-
-- [Node.js (v20 or later)](https://nodejs.org/)
-- [Vitest](https://vitest.dev/) (may also work with [Playwright](https://playwright.dev/))
-
-### Setup
-
-1. Install the package using npm:
-    ```bash
-    npm install test-fixture-factory
-    ```
-2. Ensure `vitest` is installed and configured in your project.
-
-## Usage
-
-### Defining a Factory
-
-To define a factory, use the `defineFactory` function. A factory is a function that takes dependencies and attributes to produce a test value.
-
-#### Without any Dependencies
+## Quickstart
 
 ```typescript
-import { defineFactory } from 'test-fixture-factory';
+import { createFactory } from 'test-fixture-factory'
 
-import type { Company } from 'prisma'
-
-type Dependencies = {}; // Alternatively as `Record<string, unknown>`
-
-type Attributes = {
-  name: string
-}
-
-const companyFactory = defineFactory(
-  async ({}: Dependencies, attrs: Attributes): Company => {
-    const company = await prisma.company.create({
-      name: attrs.name,
-    });
-
+// 1) Define a factory with a schema
+const companyFactory = createFactory('Company')
+  .withSchema((f) => ({
+    name: f.type<string>(),
+  }))
+  .withValue(async ({ name }) => {
+    const company = await prisma.company.create({ data: { name } })
     return {
       value: company,
-      destroy: async () => {
-        await prisma.company.delete({ where: { id: company.id } });
-      }
-    };
-  });
+      destroy: () => prisma.company.delete({ where: { id: company.id } }),
+    }
+  })
 
-export const useCompany = companyFactory.useValueFn;
-export const useCreateCompany = companyFactory.useCreateFn;
+// 2) Use it in Vitest via fixtures
+export const { useValue: useCompany, useCreateValue: useCreateCompany } = companyFactory
 ```
 
-#### With Dependencies
-
 ```typescript
-import { defineFactory } from 'test-fixture-factory';
-
-import type { Company, User } from 'prisma'
-
-type Dependencies = {
-  company: Company
-}
-
-type Attributes = {
-  name: string
-  email: string
-}
-
-const userFactory = defineFactory(
-  async ({ company }: Dependencies, attrs: Attributes): User => {
-
-    const user = await prisma.user.create({
-      company: company.id,
-      name: attrs.name,
-      email: attrs.email,
-    });
-
-    return {
-      value: user,
-      destroy: async () => {
-        await prisma.user.delete({ where: { id: user.id } });
-      }
-    };
-  });
-
-export const useUser = userFactory.useValueFn;
-export const useCreateUser = userFactory.useCreateFn;
-```
-
-### Using Factories in Tests
-
-Factories can be used to create or directly retrieve values in test functions.
-Dependencies such as `company` in the example below are automatically passed into factory functions
-through Vitest's [Fixture Initialization](https://vitest.dev/guide/test-context.html#fixture-initialization).
-
-```typescript
-import { test as anyTest, expect } from 'vitest';
-
+// example.test.ts
+import { test as anyTest, expect } from 'vitest'
 import { useCompany } from './factories/company.js'
-import { useCreateUser } from './factories/user.js'
 
 const test = anyTest.extend({
-    company: useCompany({ name: 'Crinkle' }),
-    createUser: useCreateUser({ email: 'default@email.com' })
-});
+  company: useCompany({ name: 'Acme' }),
+})
 
-test('it creates a user', async ({ company, createUser }) => {
-  const alice = await createUser({ name: 'Alice' });
-  const bob = await createUser({ name: 'Bob', email: 'bob@example.com' });
-
-  expect(alice).toEqual({
-    id: expect.any(Number),
-    companyId: company.id,
-    name: 'Alice',
-    email: 'default@email.com',
-  });
-
-  expect(bob).toEqual({
-    id: expect.any(Number),
-    companyId: company.id,
-    name: 'Bob',
-    email: 'bob@example.com',
-  });
-
-  /**
-   * Note: once this test has completed, alice and bob will both be removed
-   * from the database.
-   */
-});
+test('creates data tied to a company', async ({ company }) => {
+  expect(company).toEqual({ id: expect.any(Number), name: 'Acme' })
+})
 ```
 
-### Reusing Fixtures
+---
+
+## Concepts
+
+* **Factory**: built via `createFactory(name)` + `.withSchema()` + `.withValue()`
+* **Schema fields**: declared with `f.type<T>()` and refined with:
+
+  * `.optional()` — mark the field optional
+  * `.default(value | () => value)` — supply a default; makes field optional for **input**
+  * `.from('fixture' | ['a','b'], (ctx) => T)` — read **required** value(s) from test context (see overloads below)
+  * `.maybeFrom('fixture' | ['a','b'], (ctx) => T | undefined)` — read **optional** value(s) from context; if it resolves to `undefined` and no attribute overrides it, you’ll get a helpful error
+* **Fixtures**: Vitest fixtures returned by `.useValue(...)` or `.useCreateValue(...)`
+* **Teardown**: Provide `destroy()` in `.withValue()` to auto-cleanup after each test
+
+---
+
+## How values are resolved
+
+Given a schema, the attributes passed to `.withValue()` are resolved in this order (later wins):
+
+1. **Defaults** from `.default(...)`
+2. **Context values** from `.from(...)` / `.maybeFrom(...)`
+3. **Preset attributes** from `.useValue(preset)` or `.useCreateValue(preset)`
+4. **Call-time attributes** passed to the `create()` function (only with `.useCreateValue()`)
+
+Undefined keys are removed; later sources win.
+
+> If a field is **required** and resolves to `undefined`, you’ll get an `UndefinedFieldError` telling you which field was missing and which fixture(s) could have provided it.
+
+---
+
+## API Reference
+
+### `createFactory(name: string)` → `FactoryBuilder`
+
+Creates a new factory builder. The `name` appears in error messages.
+
+#### `.withContext<Context>()`
+
+Declare the shape of the test context (fixtures) that fields can read from.
 
 ```typescript
-import { test as anyTest, expect } from "vitest";
-
-import { InferFixtureValue } from "test-fixture-factory";
-import { useCompany } from "./factories/company.js";
-import { useCreateUser } from "./factories/user.js";
-
-const createFixtures = async ({
-  createUser,
-}: {
-  createUser: InferFixtureValue<typeof useCreateUser>;
-}) => {
-  const alice = await createUser({ name: "Alice", email: "alice@example.com" });
-  const bob = await createUser({ name: "Bob", email: "bob@example.com" });
-
-  return { alice, bob };
-};
-
-const test = anyTest.extend({
-  company: useCompany(),
-  createUser: useCreateUser(),
-});
-
-test("tests something", async ({ company, createUser }) => {
-  const { alice, bob } = await createFixtures({ createUser });
-  // ...
-});
-
-test("tests something else", async ({ company, createUser }) => {
-  const { alice, bob } = await createFixtures({ createUser });
-  // ...
-});
+const userFactory = createFactory('User')
+  .withContext<{ company: Company }>()
 ```
 
-### Destroying Resources
+#### `.withSchema(schemaFn)`
 
-Factories ensure resources are destroyed properly after use. This avoids any residual data that might affect subsequent tests. Each factory can optionally specify a `destroy` function to clean up resources.
-Since `destroy` is called in the reverse order of fixture definition, this should avoid any dependency conflicts (e.g. mandatory foreign key relationships in database tables).
+Define fields using a builder `f`.
 
-### Resource Cleanup Control
+```typescript
+.withSchema((f) => ({
+  companyId: f
+    .type<number>()
+    .from('company', ({ company }) => company.id),
+  name: f.type<string>(),
+  email: f.type<string>().default('default@email.com'),
+}))
+```
 
-There are two ways to control whether resources are automatically cleaned up after tests:
+**Field builder methods & overloads**
 
-#### Environment Variable
+```typescript
+// Required field
+f.type<string>()
 
-You can set the `TFF_SKIP_DESTROY` environment variable to any non-empty value to globally disable resource cleanup:
+// Optional field
+.type<string>().optional()
+
+// Field with default value
+.type<string>().default('hello world')
+
+// Field with calculated default value
+.type<number>().default(() => Math.random())
+
+// Read from context:
+// .withContext<{ user: { name: string } }>
+.type<string>().from('user', (ctx) => ctx.user.name)
+
+// Shorthand when the type already matches
+// .withContext<{ name: string }>
+.type<string>().from('name')
+
+// Optional read from context (may return undefined):
+// .withContext<{ user?: { name: string } }>
+.type<string>().maybeFrom('user', (ctx) => ctx.user.name)
+
+// Similar shorthand for possibly undefined values:
+// .withContext<{ name?: string }>
+.type<string>().maybeFrom('name')
+```
+
+#### `.withValue(factoryFn)`
+
+`factoryFn` receives the fully resolved attributes and returns `{ value, destroy? }`.
+
+```typescript
+.withValue(async (attrs) => ({ value: await createInDb(attrs) }))
+```
+
+#### `.build(attrs?, context?)`
+
+Create a value **outside of Vitest**. Useful for scripts or setup code.
+
+```typescript
+const { value, destroy } = await userFactory
+  .withContext<{ company: Company }>()
+  .withSchema(/* ... */)
+  .withValue(/* ... */)
+  .build({ name: 'Ada' }, { company })
+```
+
+#### `.useValue(presetAttrs?, options?)`
+
+Return a Vitest fixture that yields **one instance**.
+
+```typescript
+const test = anyTest.extend({
+  user: userFactory.useValue({ name: 'Max' }),
+})
+```
+
+#### `.useCreateValue(presetAttrs?, options?)`
+
+Return a Vitest fixture that yields a **creator function** for many instances.
+
+```typescript
+const test = anyTest.extend({
+  createUser: userFactory.useCreateValue({ name: 'Default' }),
+})
+
+test('batch', async ({ createUser, expect }) => {
+  const a = await createUser({ email: 'a@ex.com' }) // merges with preset
+  const b = await createUser({ name: 'Bob' })
+  expect(a).toBeTruthy(); expect(b).toBeTruthy()
+})
+```
+
+**Options**
+
+```typescript
+{ shouldDestroy?: boolean } // default true unless TFF_SKIP_DESTROY is truthy
+```
+
+#### Environment variable
+
+Disable auto-destroy globally while developing:
 
 ```bash
-TFF_SKIP_DESTROY=1 npm test
+TFF_SKIP_DESTROY=1 vitest
 ```
 
-This is useful during development when you want to inspect the state of resources after tests run.
+---
 
-#### Per-Factory Options
+## Vitest Integration Tips
 
-You can also control cleanup behavior at the factory level using the `shouldDestroy` option:
+* Always destructure fixtures in test signatures: `test('', ({ user }) => { ... })`
+* You can mix `useValue` and `useCreateValue` in the same `test.extend({ ... })`
+* Cleanups run in **reverse definition order**, which plays well with FK constraints
 
-```typescript
-// Disable cleanup for a specific useValueFn call
-const test = anyTest.extend({
-  company: useCompany({}, { shouldDestroy: false }),
-  createCompany: useCreateCompany({}, { shouldDestroy: false })
-});
+---
+
+## Error Handling
+
+All missing-field errors throw `UndefinedFieldError` with a helpful message that includes the factory name, e.g.:
+
+```
+[User] 1 required field(s) have undefined values:
+- companyId: must be provided as an attribute or via the test context (company)
 ```
 
-The `shouldDestroy` option:
-- Defaults to `true` unless `TFF_SKIP_DESTROY` is set
-- Can be passed to both `useValueFn` and `useCreateFn`
-- Takes precedence over the `TFF_SKIP_DESTROY` environment variable
+Detectable via `err instanceof UndefinedFieldError`.
 
-This granular control is useful when:
-- You need to keep certain resources for inspection after specific tests
-- You want to manage cleanup manually
-- You're debugging specific test scenarios
+---
 
-## API
+## FAQ
 
-### `defineFactory(factoryFn)`
+**Q: What’s the difference between `.from` and `.maybeFrom`?**
+`.from` expects a value to be resolvable (via context or attribute override). `.maybeFrom` allows the context read to produce `undefined`; if nothing overrides it, you’ll still get an error (because the field is required unless you `.optional()` it).
 
-**Parameters:**
+**Q: Can I read multiple fixtures for one field?**
+Yes — pass an array: `.from(['a','b'], ({ a, b }) => combine(a,b))`.
 
-- `factoryFn`: A function that produces the fixture, taking dependencies and attributes, and returns an object containing the value and an optional `destroy` function.
+**Q: Can `default(() => ...)` read the test context?**
+No. Defaults are pure and receive **no** arguments. If you need context, use `.from(...)` / `.maybeFrom(...)`.
 
-**Returns:**
+**Q: Playwright?**
+You can wire factories into Playwright’s `test.extend` similarly to Vitest; the fixtures you declare become available on the test context.
 
-- The `defineFactory` function returns the same `factoryFn` that was passed in. However, this function now has extra methods available on it:  `useCreateFn` and `useValueFn`.
-
-- **`useCreateFn(defaultAttrs?)`**: Provides a function to create instances of the fixture with managed lifecycle.
-- **`useValueFn(attrs)`**: Directly retrieves a fixture value, managing the lifecycle automatically.
+---
 
 ## License
 
-This package is [MIT licensed](LICENSE).
+MIT
