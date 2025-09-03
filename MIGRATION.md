@@ -152,52 +152,6 @@ const productFactory = createFactory('Product')
   });
 ```
 
----
-
-### Step 5: Update Test Files
-
-Your `test.extend` usage generally remains the same:
-
-```ts
-import { test as anyTest } from 'vitest';
-import { useCompany, useCreateUser } from './factories/index.js';
-
-const test = anyTest.extend({
-  company: useCompany({ name: 'Acme Corp' }),
-  createUser: useCreateUser({ email: 'default@example.com' }),
-});
-```
-
----
-
-### Step 6: `build` Signature Change
-
-If you used `build` outside Vitest:
-
-**Before (v1 pre-release docs):**
-
-```ts
-await factory.build(context, attrs)
-```
-
-**After (v2 final):**
-
-```ts
-await factory.build(attrs?, context?)
-```
-
-Example:
-
-```ts
-const { value } = await userFactory
-  .withContext<{ company: Company }>()
-  .withSchema(/* ... */)
-  .withValue(/* ... */)
-  .build({ name: 'Ada' }, { company });
-```
-
----
-
 ## Advanced Migration Patterns
 
 ### Complex Dependencies
@@ -281,25 +235,9 @@ const accountFactory = createFactory('Account')
 
 ---
 
-## Common Migration Issues
+## Troubleshooting
 
-### 1) Missing Factory Names
-
-**Error:**
-
-```
-createFactory() requires a name parameter
-```
-
-**Fix:**
-
-```ts
-createFactory('User') // ✅
-```
-
----
-
-### 2) Undefined Field Errors
+### Undefined Field Errors
 
 **Error:**
 
@@ -323,7 +261,7 @@ const test = anyTest.extend({
 
 ---
 
-### 3) Type Errors with Dependencies
+### Errors with Dependencies
 
 **Error:**
 
@@ -331,7 +269,7 @@ const test = anyTest.extend({
 Property 'company' does not exist on type '{}'
 ```
 
-**Fix:** Declare context shape and read via `.from(...)`.
+**Fix:** Declare context shape using `.withContext()` and read via `.from(...)`.
 
 ```ts
 const userFactory = createFactory('User')
@@ -342,24 +280,3 @@ const userFactory = createFactory('User')
     email: f.type<string>(),
   }));
 ```
-
----
-
-## Environment Changes
-
-* **Node.js ≥ 24**
-* ESM build (`"type": "module"`)
-* Cleanup control:
-
-  * Global: `TFF_SKIP_DESTROY=1 vitest`
-  * Per fixture: `{ shouldDestroy: false }`
-
----
-
-## Need Help?
-
-1. Read the **[CHANGELOG](./CHANGELOG.md)** for high-level changes.
-2. Check the updated **[README](./README.md)** for current examples.
-3. Open a GitHub issue with a minimal repro if you get stuck.
-
-Happy migrating! 🚀
