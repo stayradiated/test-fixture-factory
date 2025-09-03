@@ -101,7 +101,7 @@ describe('FixturesOf<S, K>', () => {
 
   test('has dependencies', () => {
     const schema = createSchema<{ name?: string }>().with((f) => ({
-      name: f.type<string>().dependsOn('name'),
+      name: f.type<string>().optional().from('name'),
     }))
     type Actual = FixturesOf<typeof schema, 'name'>
     type Expected = 'name'
@@ -111,7 +111,9 @@ describe('FixturesOf<S, K>', () => {
   test('multiple dependencies', () => {
     const schema = createSchema<{ name?: string; age?: number }>().with(
       (f) => ({
-        person: f.type<string>().dependsOn('name', 'age'),
+        person: f
+          .type<string>()
+          .from(['name', 'age'], ({ name, age }) => `${name} ${age}`),
       }),
     )
     type Actual = FixturesOf<typeof schema, 'person'>
@@ -217,10 +219,7 @@ describe('OptionalInputKeysOf<S>', () => {
 
   test('keys using values from context', () => {
     const schema = createSchema<{ name?: string }>().with((f) => ({
-      name: f
-        .type<string>()
-        .dependsOn('name')
-        .optionalDefault(({ name }) => name),
+      name: f.type<string>().maybeFrom('name'),
       age: f.type<number>(),
     }))
     type Actual = OptionalInputKeysOf<typeof schema>
@@ -262,10 +261,7 @@ describe('RequiredInputKeysOf<S>', () => {
 
   test('some keys using values from context', () => {
     const schema = createSchema<{ name?: string }>().with((f) => ({
-      name: f
-        .type<string>()
-        .dependsOn('name')
-        .optionalDefault(({ name }) => name),
+      name: f.type<string>().maybeFrom('name'),
       age: f.type<number>(),
     }))
     type Actual = RequiredInputKeysOf<typeof schema>
@@ -298,14 +294,8 @@ describe('InputOf<S>', () => {
     const schema = createSchema<{ c: 'c'; d?: 'd' }>().with((f) => ({
       a: f.type<'a'>(),
       b: f.type<'b'>().optional(),
-      c: f
-        .type<'c'>()
-        .dependsOn('c')
-        .default(({ c }) => c),
-      d: f
-        .type<'d'>()
-        .dependsOn('d')
-        .optionalDefault(({ d }) => d),
+      c: f.type<'c'>().from('c'),
+      d: f.type<'d'>().maybeFrom('d'),
     }))
     type Actual = InputOf<typeof schema>
     type Expected = {
@@ -356,10 +346,7 @@ describe('VoidableInputOf<S>', () => {
 
   test('all contextual fields', () => {
     const schema = createSchema<{ name: string }>().with((f) => ({
-      name: f
-        .type<string>()
-        .dependsOn('name')
-        .default(({ name }) => name),
+      name: f.type<string>().from('name'),
     }))
     type Actual = VoidableInputOf<typeof schema>
     type Expected = { name?: string | undefined } | void

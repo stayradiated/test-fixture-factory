@@ -7,14 +7,25 @@ type Prettify<T> = { [K in keyof T]: T[K] } & {}
 
 /* FIELD TYPES */
 
-type RequiredFlag = 'required' | 'optional'
+type RequiredFlag = 'required' | 'optional' | 'default' | 'from' | 'maybeFrom'
 
 /* FIELD */
 
 type Field<Fixtures extends object, Value, Flag extends RequiredFlag> = {
   fixtureList: (keyof Fixtures & string)[]
-  isRequired: Flag extends 'required' ? true : false
-  defaultValue: undefined | Value | ((tcx: Fixtures) => Value | undefined)
+  getValueFromContext: undefined | ((ctx: Fixtures) => Value | undefined)
+  isRequired: Flag extends 'required'
+    ? true
+    : Flag extends 'default'
+      ? true
+      : Flag extends 'from'
+        ? true
+        : Flag extends 'maybeFrom'
+          ? true
+          : Flag extends 'optional'
+            ? false
+            : true
+  defaultValue: undefined | Value | (() => Value)
 }
 
 // cast a FieldBuilder to a Field
@@ -124,13 +135,15 @@ type RequiredOutputKeysOf<Schema extends AnySchema> = Exclude<
   OptionalOutputKeysOf<Schema>
 >
 
-// keys that are optional in INPUT (either optional() OR has dep)
+// keys that are optional in INPUT (either .optional() / .from() / .default())
 type OptionalInputKeysOf<S extends AnySchema> = {
-  [K in keyof S]: FlagOf<S, K> extends 'optional'
+  [K in keyof S]: FlagOf<S, K> extends
+    | 'optional'
+    | 'default'
+    | 'from'
+    | 'maybeFrom'
     ? K
-    : FixturesOf<S, K> extends never
-      ? never
-      : K
+    : never
 }[keyof S]
 
 // keys that are required in INPUT (not optional and no dep)
@@ -156,21 +169,37 @@ type VoidableInputOf<Schema extends AnySchema> =
     ? InputOf<Schema> | void
     : InputOf<Schema>
 
+// get all required keys of an object
+type RequiredKeys<T> = {
+  // biome-ignore lint/complexity/noBannedTypes: allow the use of {} here
+  [K in keyof T]-?: {} extends Pick<T, K> ? never : K
+}[keyof T]
+
+// make a type voidable if it doesn't have any required keys
+type MaybeVoid<T> = RequiredKeys<T> extends never ? T | void : T
+
+type InferFixtureValue<T> = T extends () => VitestFixtureFn<
+  infer _Deps,
+  infer Value
+>
+  ? Value
+  : never
+
 export type {
   AnyField,
-  FieldOf,
-  AnyFieldWithContext,
   AnySchema,
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
   DestroyFn,
   FactoryFn,
   FactoryOptions,
-  FactoryResult,
   Field,
+  FieldOf,
   FixturesOf,
   FlagOf,
+  InferFixtureValue,
   InputOf,
+  MaybeVoid,
   MissingField,
   OptionalInputKeysOf,
   OptionalOutputKeysOf,

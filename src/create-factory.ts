@@ -6,6 +6,7 @@ import type {
   FactoryFn,
   FactoryOptions,
   InputOf,
+  MaybeVoid,
   OutputOf,
   Prettify,
   SchemaOf,
@@ -66,20 +67,25 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  build(context: Context, attrs: VoidableInputOf<Schema>) {
+  async build(attrs: VoidableInputOf<Schema>, context: MaybeVoid<Context>) {
     const { name, schema, factoryFn } = this.state
 
     if (!factoryFn) {
       throw new Error('.withValue() must be called before .build()')
     }
 
-    const data = resolveSchema(schema, context, attrs)
+    const data = resolveSchema(schema, context ?? {}, attrs)
     const errorList = validateSchemaData(schema, data)
     if (errorList.length > 0) {
       throw new UndefinedFieldError(name, errorList)
     }
 
-    return factoryFn(data)
+    const { value, destroy } = await factoryFn(data)
+
+    return {
+      value,
+      destroy: destroy ?? (() => Promise.resolve()),
+    }
   }
 
   useCreateValue<
@@ -156,6 +162,10 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
 }
 
 const createFactory = (name: string) => {
+  if (name.trim().length === 0) {
+    throw new Error('createFactory: name should be a non-empty string')
+  }
+
   return new FactoryBuilder<object, AnySchema, unknown>({
     name,
     schema: {},
