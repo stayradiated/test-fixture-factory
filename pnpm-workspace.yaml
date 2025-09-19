@@ -1,2 +1,4 @@
 onlyBuiltDependencies:
   - oxc-resolver
+
+minimumReleaseAge: 1440
