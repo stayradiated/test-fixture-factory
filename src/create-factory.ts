@@ -166,8 +166,19 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
         const factoryPromise = fixtureFn(data, useFn)
 
         destroyList.push(async () => {
-          blockUntilDispose.resolve()
-          await factoryPromise
+          if (shouldDestroy) {
+            blockUntilDispose.resolve()
+            await factoryPromise
+          } else {
+            try {
+              blockUntilDispose.reject(
+                new Error('[test-fixture-factory] Skipping test cleanup'),
+              )
+              await factoryPromise
+            } catch {
+              // ignore
+            }
+          }
         })
 
         const value = await blockUntilValue.promise
@@ -177,10 +188,8 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
         Value
       >)
 
-      if (shouldDestroy) {
-        for (const destroy of destroyList) {
-          await destroy()
-        }
+      for (const destroy of destroyList) {
+        await destroy()
       }
     })
   }
@@ -225,7 +234,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
             new Error('[test-fixture-factory] Skipping test cleanup'),
           )
           await factoryPromise
-        } catch (_e) {
+        } catch {
           // ignore
         }
       }
