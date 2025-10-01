@@ -2,12 +2,17 @@ import { describe, test } from 'vitest'
 
 import { createFactory } from './create-factory.js'
 
+type User = {
+  name: string
+  accountId: number
+}
+
 const getFactory = () => {
   const state = {
     isDestroyed: false,
   }
 
-  const factory = createFactory('User')
+  const factory = createFactory<User>('User')
     .withContext<{
       name?: string
       accountId?: number
@@ -22,20 +27,15 @@ const getFactory = () => {
         .maybeFrom('accountId', ({ accountId }) => accountId)
         .default(-1),
     }))
-    .withValue((attrs) => {
+    .fixture(async (attrs, use) => {
       const { name, accountId } = attrs
 
-      const value = {
+      await use({
         name,
         accountId,
-      }
+      })
 
-      return {
-        value,
-        destroy: async () => {
-          state.isDestroyed = true
-        },
-      }
+      state.isDestroyed = true
     })
 
   return {
@@ -47,45 +47,46 @@ const getFactory = () => {
 describe('build', () => {
   test('without dependencies or attributes', async ({ expect }) => {
     const { factory, state } = getFactory()
-    const { value, destroy } = await factory.build()
 
-    expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
-    expect(state.isDestroyed).toBe(false)
-
-    await destroy()
+    {
+      await using user = await factory.build()
+      expect(user.value).toStrictEqual({ name: 'Unknown', accountId: -1 })
+      expect(state.isDestroyed).toBe(false)
+    }
 
     expect(state.isDestroyed).toBe(true)
   })
 
   test('with dependencies', async ({ expect }) => {
     const { factory, state } = getFactory()
-    const { value, destroy } = await factory.build(
-      {},
-      {
-        name: 'Gregg',
-        accountId: 33,
-      },
-    )
 
-    expect(value).toStrictEqual({ name: 'Gregg', accountId: 33 })
-    expect(state.isDestroyed).toBe(false)
-
-    await destroy()
+    {
+      await using user = await factory.build(
+        {},
+        {
+          name: 'Gregg',
+          accountId: 33,
+        },
+      )
+      expect(user.value).toStrictEqual({ name: 'Gregg', accountId: 33 })
+      expect(state.isDestroyed).toBe(false)
+    }
 
     expect(state.isDestroyed).toBe(true)
   })
 
   test('with attributes', async ({ expect }) => {
     const { factory, state } = getFactory()
-    const { value, destroy } = await factory.build({
-      name: 'Joseph',
-      accountId: 42,
-    })
 
-    expect(value).toStrictEqual({ name: 'Joseph', accountId: 42 })
-    expect(state.isDestroyed).toBe(false)
+    {
+      await using user = await factory.build({
+        name: 'Joseph',
+        accountId: 42,
+      })
 
-    await destroy()
+      expect(user.value).toStrictEqual({ name: 'Joseph', accountId: 42 })
+      expect(state.isDestroyed).toBe(false)
+    }
 
     expect(state.isDestroyed).toBe(true)
   })
@@ -287,19 +288,17 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const accountFactory = createFactory('Account')
+  const accountFactory = createFactory<Account>('Account')
     .withSchema((f) => ({
       id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
       name: f.type<string>().default('Test Account'),
     }))
-    .withValue(async ({ id, name }) => {
-      return {
-        value: {
-          id,
-          name,
-        },
-      }
-    })
+    .fixture(async ({ id, name }, use) =>
+      use({
+        id,
+        name,
+      }),
+    )
 
   type Person = {
     id: number
@@ -307,7 +306,7 @@ describe('vitest.extend', () => {
     name: string
   }
 
-  const personFactory = createFactory('Person')
+  const personFactory = createFactory<Person>('Person')
     .withContext<{ account?: Account }>()
     .withSchema((f) => ({
       id: f.type<number>().default(() => Math.floor(Math.random() * 10000000)),
@@ -316,17 +315,13 @@ describe('vitest.extend', () => {
         .maybeFrom('account', ({ account }) => account?.id),
       name: f.type<string>().default('Test Person'),
     }))
-    .withValue(({ id, accountId, name }) => {
-      const person: Person = {
+    .fixture(({ id, accountId, name }, use) =>
+      use({
         id,
         accountId,
         name,
-      }
-
-      return {
-        value: person,
-      }
-    })
+      }),
+    )
 
   const myTest = test.extend({
     account: accountFactory.useValue({}),

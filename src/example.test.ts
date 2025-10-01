@@ -6,44 +6,36 @@ import { createFactory } from './create-factory.js'
 
 type Author = { id: number; name: string }
 
-const authorFactory = createFactory('Author')
+const authorFactory = createFactory<Author>('Author')
   .withSchema((f) => ({
     id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     name: f.type<string>(),
   }))
-  .withValue(async (attrs) => {
-    const { id, name } = attrs
-
-    const value: Author = {
-      id,
-      name,
-    }
-
-    return { value }
-  })
+  .fixture(async (attrs, use) =>
+    use({
+      id: attrs.id,
+      name: attrs.name,
+    }),
+  )
 
 const { useCreateValue: useCreateAuthor, useValue: useAuthor } = authorFactory
 
 type Book = { id: number; title: string; authorId: number }
 
-const bookFactory = createFactory('Book')
+const bookFactory = createFactory<Book>('Book')
   .withContext<{ author?: Pick<Author, 'id'> }>()
   .withSchema((f) => ({
     authorId: f.type<number>().maybeFrom('author', ({ author }) => author?.id),
     id: f.type<number>().default(() => Math.floor(Math.random() * 1_000_000)),
     title: f.type<string>().default('Unknown'),
   }))
-  .withValue(async (attrs) => {
-    const { id, authorId, title } = attrs
-
-    const value: Book = {
-      id,
-      title: title,
-      authorId,
-    }
-
-    return { value }
-  })
+  .fixture(async (attrs, use) =>
+    use({
+      id: attrs.id,
+      title: attrs.title,
+      authorId: attrs.authorId,
+    }),
+  )
 
 const { useCreateValue: useCreateBook, useValue: useBook } = bookFactory
 

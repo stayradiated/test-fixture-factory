@@ -6,6 +6,7 @@ import type {
   EmptySchema,
   FactoryFn,
   FactoryOptions,
+  FixtureFn,
   InputOf,
   MaybeVoid,
   OutputOf,
@@ -32,7 +33,7 @@ const defaultFactoryOptions: FactoryOptions = {
 type FactoryState<S extends AnySchema, V> = {
   name: string
   schema: S
-  factoryFn: FactoryFn<Prettify<OutputOf<S>>, V> | undefined
+  fixtureFn: FixtureFn<Prettify<OutputOf<S>>, V> | undefined
 }
 
 type CreateFn<Schema extends AnySchema, Value> = (
@@ -57,22 +58,39 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
   ) {
     return new FactoryBuilder<Context, SchemaOf<SchemaBuilder>, Value>({
       ...this.state,
-      factoryFn: undefined,
+      fixtureFn: undefined,
       schema: createSchema<Context>().with(schemaFn),
     })
   }
 
-  withValue<Value>(factoryFn: FactoryFn<Prettify<OutputOf<Schema>>, Value>) {
+  /*
+   * @deprecated
+   * use .fixture() instead
+   */
+  withValue<NextValue>(
+    factoryFn: FactoryFn<Prettify<OutputOf<Schema>>, NextValue>,
+  ) {
+    return new FactoryBuilder<Context, Schema, NextValue>({
+      ...this.state,
+      fixtureFn: async (attrs, use) => {
+        const { value, destroy } = await factoryFn(attrs)
+        await use(value)
+        destroy?.()
+      },
+    })
+  }
+
+  fixture(fixtureFn: FixtureFn<Prettify<OutputOf<Schema>>, Value>) {
     return new FactoryBuilder<Context, Schema, Value>({
       ...this.state,
-      factoryFn,
+      fixtureFn,
     })
   }
 
   async build(attrs: VoidableInputOf<Schema>, context: MaybeVoid<Context>) {
-    const { name, schema, factoryFn } = this.state
+    const { name, schema, fixtureFn } = this.state
 
-    if (!factoryFn) {
+    if (!fixtureFn) {
       throw new Error('.withValue() must be called before .build()')
     }
 
@@ -82,11 +100,25 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
       throw new UndefinedFieldError(name, errorList)
     }
 
-    const { value, destroy } = await factoryFn(data)
+    const blockUntilValue = Promise.withResolvers<Value>()
+    const blockUntilDispose = Promise.withResolvers<void>()
+
+    const useFn = async (value: Value) => {
+      blockUntilValue.resolve(value)
+      await blockUntilDispose.promise
+    }
+
+    const factoryPromise = fixtureFn(data, useFn)
+    const value = await blockUntilValue.promise
 
     return {
-      value,
-      destroy: destroy ?? (() => Promise.resolve()),
+      get value() {
+        return value
+      },
+      [Symbol.asyncDispose]: async () => {
+        blockUntilDispose.resolve()
+        await factoryPromise
+      },
     }
   }
 
@@ -102,9 +134,9 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
       Value
     >
   > {
-    const { name, schema, factoryFn } = this.state
+    const { name, schema, fixtureFn } = this.state
 
-    if (!factoryFn) {
+    if (!fixtureFn) {
       throw new Error('.withValue() must be called before .useCreateValue()')
     }
 
@@ -124,12 +156,21 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
           throw new UndefinedFieldError(name, errorList)
         }
 
-        const { value, destroy } = await factoryFn(data)
+        const blockUntilValue = Promise.withResolvers<Value>()
+        const blockUntilDispose = Promise.withResolvers<void>()
 
-        if (destroy) {
-          destroyList.push(destroy)
+        const useFn = async (value: Value) => {
+          blockUntilValue.resolve(value)
+          await blockUntilDispose.promise
         }
+        const factoryPromise = fixtureFn(data, useFn)
 
+        destroyList.push(async () => {
+          blockUntilDispose.resolve()
+          await factoryPromise
+        })
+
+        const value = await blockUntilValue.promise
         return value
       }) satisfies CreateFn<
         SetSchemaFieldsOptional<Schema, keyof PresetAttrs & keyof Schema>,
@@ -148,10 +189,10 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     attrs: VoidableInputOf<Schema>,
     options: FactoryOptions = defaultFactoryOptions,
   ): VitestFixtureFn<Context, Value> {
-    const { name, schema, factoryFn } = this.state
+    const { name, schema, fixtureFn } = this.state
     const { shouldDestroy } = options
 
-    if (!factoryFn) {
+    if (!fixtureFn) {
       throw new Error('.withValue() must be called before .useValue()')
     }
 
@@ -162,24 +203,45 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
         throw new UndefinedFieldError(name, errorList)
       }
 
-      const { value, destroy } = await factoryFn(data)
+      const blockUntilValue = Promise.withResolvers<Value>()
+      const blockUntilDispose = Promise.withResolvers<void>()
+
+      const useFn = async (value: Value) => {
+        blockUntilValue.resolve(value)
+        await blockUntilDispose.promise
+      }
+
+      const factoryPromise = fixtureFn(data, useFn)
+
+      const value = await blockUntilValue.promise
       await use(value)
+
       if (shouldDestroy) {
-        await destroy?.()
+        blockUntilDispose.resolve()
+        await factoryPromise
+      } else {
+        try {
+          blockUntilDispose.reject(
+            new Error('[test-fixture-factory] Skipping test cleanup'),
+          )
+          await factoryPromise
+        } catch (_e) {
+          // ignore
+        }
       }
     })
   }
 }
 
-const createFactory = (name: string) => {
+const createFactory = <Value = unknown>(name: string) => {
   if (name.trim().length === 0) {
     throw new Error('createFactory: name should be a non-empty string')
   }
 
-  return new FactoryBuilder<object, EmptySchema, unknown>({
+  return new FactoryBuilder<object, EmptySchema, Value>({
     name,
     schema: {},
-    factoryFn: undefined,
+    fixtureFn: undefined,
   })
 }
 
