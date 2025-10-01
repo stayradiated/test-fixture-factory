@@ -81,14 +81,26 @@ type VitestFixtureFn<Context, FixtureValue> = (
   use: (value: FixtureValue) => Promise<void>,
 ) => Promise<void>
 
+/*
+ * @deprecated Use the `use` callback instead of returning a value from the
+ * factory function.
+ */
 type FactoryResult<Value> = {
   value: Value
   destroy?: DestroyFn
 }
 
+/*
+ * @deprecated
+ */
 type FactoryFn<Attrs extends object, Value> = (
   attrs: Attrs,
 ) => Promise<FactoryResult<Value>> | FactoryResult<Value>
+
+type FixtureFn<Attrs extends object, Value> = (
+  attrs: Attrs,
+  use: (value: Value) => Promise<void>,
+) => Promise<void>
 
 type FactoryOptions = {
   // if true, the factory will destroy the created values after the test
@@ -211,6 +223,7 @@ export type {
   DestroyFn,
   EmptySchema,
   FactoryFn,
+  FixtureFn,
   FactoryOptions,
   Field,
   FieldOf,

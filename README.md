@@ -40,12 +40,11 @@ const companyFactory = createFactory('Company')
   .withSchema((f) => ({
     name: f.type<string>(),
   }))
-  .withValue(async ({ name }) => {
+  .fixture(async (attrs, use) => {
+    const { name } = attrs
     const company = await prisma.company.create({ data: { name } })
-    return {
-      value: company,
-      destroy: () => prisma.company.delete({ where: { id: company.id } }),
-    }
+    await use(company)
+    await prisma.company.delete({ where: { id: company.id } })
   })
 
 // 2) Use it in Vitest via fixtures
@@ -72,7 +71,7 @@ test('creates data tied to a company', async ({ company }) => {
 
 ### Factory
 
-Built via `createFactory(name)` + `.withSchema()` + `.withValue()`
+Built via `createFactory(name)` + `.withSchema()` + `.fixture()`
 
 ### Schema Fields
 
@@ -89,13 +88,26 @@ Vitest fixtures returned by `.useValue(...)` or `.useCreateValue(...)`
 
 ### Teardown
 
-Provide `destroy()` in `.withValue()` to auto-cleanup after each test
+Fixtures will be automatically cleaned up after each test runs. Just as in Vitest
+fixtures, the call `await use()`, you can then add any teardown code you need 
+
+```typescript
+.fixture(async (attrs, use) => {
+    const value = await createValue()
+
+    // this will block until the test has finished
+    await use(value)
+
+    // teardown goes here
+    await deleteValue(value)
+})
+```
 
 ---
 
 ## How Values Are Resolved
 
-Given a schema, the attributes passed to `.withValue()` are resolved in this order (later wins):
+Given a schema, the attributes passed to `.fixture()` are resolved in this order (later wins):
 
 1. **Defaults** from `.default(...)`
 2. **Context values** from `.from(...)` / `.maybeFrom(...)`
@@ -171,24 +183,75 @@ f.type<string>().maybeFrom('user', (ctx) => ctx.user?.name)
 f.type<string>().maybeFrom('name')
 ```
 
-#### `.withValue(factoryFn)`
+#### `.fixture(fixtureFn)`
 
-`factoryFn` receives the fully resolved attributes and returns `{ value, destroy? }`.
+`fixtureFn` receives the fully resolved attributes and a `use` function
+(similar to Vitest).
+
+You must call `use` with the fixture value _and then await the result. While
+the test is runing, this will block the fixture. Once `await use()` resolves,
+the fixture can cleanup any values it needs to.
 
 ```typescript
-.withValue(async (attrs) => ({ value: await createInDb(attrs) }))
+.fixture(async (attrs, use) => {
+  const person = await createUser()
+  await use(person)
+  await deletePerson(person.id)
+})
+```
+
+#### `.withValue(factoryFn)` (deprecated)
+
+This has been replaced by the `.fixture()` method (with an API similar to
+Vitest).
+
+To avoid breaking changes, you can continue using `withValue`.
+
+The `factoryFn` callback receives the fully resolved attributes and should return an object `{ value, destroy? }`.
+
+```typescript
+.withValue(async (attrs) => {
+  const person = await createPerson()
+  return {
+    value: person,
+    destroy: async () => {
+      await destroyPerson(person.id)
+    }
+  }
+})
 ```
 
 #### `.build(attrs?, context?)`
 
 Create a value **outside of Vitest**. Useful for scripts or setup code.
 
+##### Using `await using` (TypeScript 5.2+)
+
+The recommended approach uses [explicit resource management](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management) to automatically dispose of the fixture when it goes out of scope:
+
 ```typescript
-const { value, destroy } = await userFactory
-  .withContext<{ company: Company }>()
-  .withSchema(/* ... */)
-  .withValue(/* ... */)
+{
+  await using user = await userFactory
+    .build({ name: 'Ada' }, { company })
+
+  // user.value is available here
+  console.log(user.value.name) // 'Ada'
+
+} // fixture is automatically disposed here (teardown runs)
+```
+
+##### Manual disposal
+
+If you're using TypeScript < 5.2 or prefer manual control:
+
+```typescript
+const user = await userFactory
   .build({ name: 'Ada' }, { company })
+
+console.log(user.value)
+
+// manually clean up when done
+await user[Symbol.asyncDispose]()
 ```
 
 ### Vitest Integration

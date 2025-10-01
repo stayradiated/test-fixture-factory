@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > Upgrading from v1? See **[MIGRATION.md](./MIGRATION.md)**.
 
+## [2.1.0] - 2025-10-01
+
+### 🚀 Added
+
+- **New `.fixture()` method** - Replaces `.withValue()` with a more intuitive API that aligns with Vitest's fixture pattern
+  - Accepts `(attrs, use)` callback where `use()` is called with the fixture value
+  - Teardown code runs after `await use()` resolves, just like Vitest fixtures
+  - Cleaner separation between setup and teardown logic
+
+### ✨ Improved
+
+- **Generic type parameter** - `createFactory<Value>(name)` now accepts an optional type parameter for better type inference
+- **Explicit resource management** - `.build()` now returns an object with `Symbol.asyncDispose`, enabling `await using` pattern (TypeScript 5.2+)
+- **Better lifecycle control** - Fixtures now use `Promise.withResolvers()` for more robust coordination between test execution and cleanup
+
+### 📝 Documentation
+
+- Updated README with comprehensive `.fixture()` examples and migration guide from `.withValue()`
+- Added teardown examples showing cleanup patterns
+- Clarified attribute resolution order
+
+### 🔧 Deprecated
+
+- `.withValue()` is now deprecated in favor of `.fixture()` but remains functional for backwards compatibility
+
 ## [2.0.0] - 2025-09-03
 
 ### 🚀 Highlights
