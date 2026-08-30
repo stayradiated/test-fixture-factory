@@ -13,7 +13,8 @@ import type {
   Prettify,
   SchemaOf,
   SetSchemaFieldsOptional,
-  VitestFixtureFn,
+  UseCreateValueFixture,
+  UseValueFixture,
   VoidableInputOf,
 } from './types.js'
 
@@ -127,7 +128,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
   >(
     presetAttrs?: PresetAttrs,
     { shouldDestroy }: FactoryOptions = defaultFactoryOptions,
-  ): VitestFixtureFn<
+  ): UseCreateValueFixture<
     Context,
     CreateFn<
       SetSchemaFieldsOptional<Schema, keyof PresetAttrs & keyof Schema>,
@@ -197,7 +198,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
   useValue(
     attrs: VoidableInputOf<Schema>,
     options: FactoryOptions = defaultFactoryOptions,
-  ): VitestFixtureFn<Context, Value> {
+  ): UseValueFixture<Context, Value> {
     const { name, schema, fixtureFn } = this.state
     const { shouldDestroy } = options
 

@@ -186,13 +186,13 @@ describe('With missing attributes', () => {
     book: useBook(),
   })
 
-  test.fails(
-    'should fail when resolving authorId',
-    async ({ book, expect }) => {
-      // NOTE: this test is  never actually run
-      expect(book).toBeUndefined()
-    },
-  )
+  test.fails('should fail when resolving authorId', async ({
+    book,
+    expect,
+  }) => {
+    // NOTE: this test is  never actually run
+    expect(book).toBeUndefined()
+  })
 
   test('should fail when resolving createBook().authorId', async ({
     createBook,

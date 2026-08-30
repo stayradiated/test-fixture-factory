@@ -76,10 +76,35 @@ type MissingField = {
 
 type DestroyFn = () => Promise<void> | void
 
+/** A Vitest-compatible fixture callback. */
 type VitestFixtureFn<Context, FixtureValue> = (
   context: object & Context,
   use: (value: FixtureValue) => Promise<void>,
 ) => Promise<void>
+
+/** The result returned by `factory.useValue(...)`. */
+type UseValueFixture<Context, Value> = VitestFixtureFn<Context, Value>
+
+/** Makes a creator's attributes optional when none of their keys is required. */
+type CreateValueInput<Attrs> = MaybeVoid<Attrs>
+
+/** Makes preset attribute keys optional for a fixture creator. */
+type PresetInput<
+  Attrs extends object,
+  Preset extends Partial<Attrs>,
+> = Prettify<
+  Omit<Attrs, keyof Preset> &
+    Partial<Pick<Attrs, Extract<keyof Preset, keyof Attrs>>>
+>
+
+/** A function that creates fixture values. */
+type CreateValueFn<Attrs, Value> = (attrs: Attrs) => Promise<Value>
+
+/** The result returned by `factory.useCreateValue(...)`. */
+type UseCreateValueFixture<
+  Context,
+  Creator extends CreateValueFn<any, any>,
+> = VitestFixtureFn<Context, Creator>
 
 /*
  * @deprecated Use the `use` callback instead of returning a value from the
@@ -205,6 +230,8 @@ export type {
   AnySchema,
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
+  CreateValueFn,
+  CreateValueInput,
   DestroyFn,
   EmptySchema,
   FactoryFn,
@@ -220,12 +247,15 @@ export type {
   OptionalInputKeysOf,
   OptionalOutputKeysOf,
   OutputOf,
+  PresetInput,
   Prettify,
   RequiredFlag,
   RequiredInputKeysOf,
   RequiredOutputKeysOf,
   SchemaOf,
   SetSchemaFieldsOptional,
+  UseCreateValueFixture,
+  UseValueFixture,
   ValueOf,
   VitestFixtureFn,
   VoidableInputOf,

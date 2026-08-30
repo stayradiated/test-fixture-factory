@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > Upgrading from v1? See **[MIGRATION.md](./MIGRATION.md)**.
 
+## [Unreleased]
+
+### 🚀 Added
+
+- Public fixture declaration types (`UseValueFixture`, `UseCreateValueFixture`,
+  `CreateValueFn`, `CreateValueInput`, and `PresetInput`) for compact
+  downstream declaration emits.
+
 ## [2.1.0] - 2025-10-01
 
 ### Added

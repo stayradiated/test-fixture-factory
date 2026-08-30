@@ -288,6 +288,38 @@ test('batch', async ({ createUser }) => {
 { shouldDestroy?: boolean } // default true unless TFF_SKIP_DESTROY is truthy
 ```
 
+### Portable fixture type annotations
+
+When exporting fixtures from a package that emits declarations, annotate them
+with the public fixture types to keep the emitted `.d.ts` small and portable.
+`CreateValueInput` adds `void` only when the input has no required keys.
+
+```typescript
+import type {
+  CreateValueFn,
+  CreateValueInput,
+  PresetInput,
+  UseCreateValueFixture,
+  UseValueFixture,
+} from 'test-fixture-factory'
+
+type UserInput = { id?: number; name: string }
+type CreateUser = CreateValueFn<CreateValueInput<UserInput>, User>
+
+export const useUser: UseValueFixture<UserContext, User> =
+  userFactory.useValue({ name: 'Ada' })
+
+// `name` is preset, so it is optional when creating another user.
+type CreatePresetUser = CreateValueFn<
+  CreateValueInput<PresetInput<UserInput, { name: string }>>,
+  User
+>
+export const useCreateUser: UseCreateValueFixture<
+  UserContext,
+  CreatePresetUser
+> = userFactory.useCreateValue({ name: 'Ada' })
+```
+
 ---
 
 ## Advanced Usage
