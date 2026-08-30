@@ -111,31 +111,16 @@ type FactoryOptions = {
 /* SCHEMA FIELD HELPERS */
 
 // extract the value type of a field
-type ValueOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
-  infer _C,
-  infer Value,
-  infer _F
->
-  ? Value
-  : never
+type ValueOf<S extends AnySchema, K extends keyof S> =
+  S[K] extends Field<infer _C, infer Value, infer _F> ? Value : never
 
 // extract the fixtures of a field
-type FixturesOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
-  infer Fixtures,
-  infer _V,
-  infer _F
->
-  ? Fixtures
-  : never
+type FixturesOf<S extends AnySchema, K extends keyof S> =
+  S[K] extends Field<infer Fixtures, infer _V, infer _F> ? Fixtures : never
 
 // get the flag of a field
-type FlagOf<S extends AnySchema, K extends keyof S> = S[K] extends Field<
-  infer _F,
-  infer _V,
-  infer Flag
->
-  ? Flag
-  : never
+type FlagOf<S extends AnySchema, K extends keyof S> =
+  S[K] extends Field<infer _F, infer _V, infer Flag> ? Flag : never
 
 // keys that are flagged as 'optional' in the schema
 type OptionalOutputKeysOf<Schema extends AnySchema> = {
@@ -223,10 +208,10 @@ export type {
   DestroyFn,
   EmptySchema,
   FactoryFn,
-  FixtureFn,
   FactoryOptions,
   Field,
   FieldOf,
+  FixtureFn,
   FlagOf,
   InferFixtureValue,
   InputOf,

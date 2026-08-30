@@ -44,11 +44,11 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@types/node": "24.6.0",
-    "knip": "5.64.1",
-    "tsup": "8.5.0",
-    "typescript": "5.9.2",
-    "vitest": "3.2.4"
+    "@biomejs/biome": "2.5.11",
+    "@types/node": "26.4.0",
+    "knip": "6.33.0",
+    "tsup": "8.5.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   }
 }

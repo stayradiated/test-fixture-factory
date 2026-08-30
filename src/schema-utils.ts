@@ -143,4 +143,4 @@ const getFixtureList = <Schema extends AnySchema>(schema: Schema): string[] => {
   return list
 }
 
-export { createSchema, resolveSchema, validateSchemaData, getFixtureList }
+export { createSchema, getFixtureList, resolveSchema, validateSchemaData }
