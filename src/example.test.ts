@@ -92,6 +92,9 @@ describe('useValue with attributes', () => {
 
 describe('useCreate', () => {
   const test = anyTest.extend({
+    // annoyingly, vitest require us to provide any referenced fixtures
+    author: undefined,
+
     createAuthor: useCreateAuthor({ name: 'Default' }),
     createBook: useCreateBook(),
   })
@@ -173,6 +176,8 @@ describe('useValue + useCreate', () => {
 
 describe('With missing attributes', () => {
   const test = anyTest.extend({
+    author: undefined,
+
     createBook: useCreateBook(),
     createAuthor: useCreateAuthor(),
 
@@ -181,13 +186,13 @@ describe('With missing attributes', () => {
     book: useBook(),
   })
 
-  test.fails(
-    'should fail when resolving authorId',
-    async ({ book, expect }) => {
-      // NOTE: this test is  never actually run
-      expect(book).toBeUndefined()
-    },
-  )
+  test.fails('should fail when resolving authorId', async ({
+    book,
+    expect,
+  }) => {
+    // NOTE: this test is  never actually run
+    expect(book).toBeUndefined()
+  })
 
   test('should fail when resolving createBook().authorId', async ({
     createBook,

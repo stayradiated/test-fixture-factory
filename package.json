@@ -1,8 +1,8 @@
 {
   "name": "test-fixture-factory",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A minimal library for creating and managing test fixtures using Vitest, enabling structured, repeatable, and efficient testing processes.",
-  "packageManager": "pnpm@10.17.0",
+  "packageManager": "pnpm@12.1.0",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -13,7 +13,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "$npm_execpath run build",
-    "build": "tsup",
+    "build": "tsdown",
     "test": "vitest --watch=false",
     "tidy": "biome check --fix --unsafe",
     "tidy:check": "biome check",
@@ -44,11 +44,11 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
-    "@types/node": "24.6.0",
-    "knip": "5.64.1",
-    "tsup": "8.5.0",
-    "typescript": "5.9.2",
-    "vitest": "3.2.4"
+    "@biomejs/biome": "2.5.11",
+    "@types/node": "26.4.0",
+    "knip": "6.33.0",
+    "tsdown": "0.22.14",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   }
 }

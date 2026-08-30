@@ -114,5 +114,6 @@ const createFieldBuilder = <
   },
 })
 
-export { createFieldBuilder, FieldBuilder }
 export type { NewFieldBuilder }
+
+export { createFieldBuilder, FieldBuilder }
