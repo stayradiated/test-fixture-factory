@@ -1,8 +1,8 @@
 {
   "name": "test-fixture-factory",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A minimal library for creating and managing test fixtures using Vitest, enabling structured, repeatable, and efficient testing processes.",
-  "packageManager": "pnpm@10.17.0",
+  "packageManager": "pnpm@12.1.0",
   "engines": {
     "node": ">=22.0.0"
   },
