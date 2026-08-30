@@ -9,50 +9,167 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.1.0] - 2025-10-01
 
-### 🚀 Added
+### Added
 
-- **New `.fixture()` method** - Replaces `.withValue()` with a more intuitive API that aligns with Vitest's fixture pattern
-  - Accepts `(attrs, use)` callback where `use()` is called with the fixture value
-  - Teardown code runs after `await use()` resolves, just like Vitest fixtures
-  - Cleaner separation between setup and teardown logic
+- New `.fixture()` method, replacing `.withValue()` with a Vitest-style `(attrs, use)` callback.
+- Optional `Value` type parameter for `createFactory<Value>(name)`.
+- `Symbol.asyncDispose` support on values returned by `.build()`, enabling `await using`.
 
-### ✨ Improved
+### Changed
 
-- **Generic type parameter** - `createFactory<Value>(name)` now accepts an optional type parameter for better type inference
-- **Explicit resource management** - `.build()` now returns an object with `Symbol.asyncDispose`, enabling `await using` pattern (TypeScript 5.2+)
-- **Better lifecycle control** - Fixtures now use `Promise.withResolvers()` for more robust coordination between test execution and cleanup
+- Fixture lifecycle coordination now uses `Promise.withResolvers()`.
 
-### 📝 Documentation
+### Fixed
 
-- Updated README with comprehensive `.fixture()` examples and migration guide from `.withValue()`
-- Added teardown examples showing cleanup patterns
-- Clarified attribute resolution order
+- Fixtures no longer hang when automatic cleanup is disabled.
 
-### 🔧 Deprecated
+### Documentation
 
-- `.withValue()` is now deprecated in favor of `.fixture()` but remains functional for backwards compatibility
+- Added `.fixture()` migration, setup/teardown, and attribute-resolution examples.
+
+### Deprecated
+
+- `.withValue()` is deprecated in favor of `.fixture()` and remains available for backwards compatibility.
+
+## [2.0.3] - 2025-09-19
+
+### Changed
+
+- Lowered the Node.js engine requirement from 24 to 22 and updated project dependencies.
+
+## [2.0.2] - 2025-09-03
+
+### Fixed
+
+- Factories with an empty schema can now be created and built correctly.
+
+## [2.0.1] - 2025-09-03
+
+### Added
+
+- Optional fields in factory schemas.
 
 ## [2.0.0] - 2025-09-03
 
-### 🚀 Highlights
+### Highlights
 
-- Complete rewrite with a **fluent, schema-first API**
-- Strong, readable **TypeScript inference** end-to-end
-- Explicit, typed **context reads** with `.from(...)` / `.maybeFrom(...)`
-- Automatic **UndefinedFieldError** for factory names and missing-field details
-- Sensible **fixture lifecycle** (auto-destroy by default, overridable)
+- Complete rewrite with a **fluent, schema-first API**.
+- Strong, readable TypeScript inference end-to-end.
+- Explicit, typed context reads with `.from(...)` and `.maybeFrom(...)`.
+- Automatic `UndefinedFieldError` messages with factory names and missing-field details.
+- Fixture lifecycle management with automatic destruction by default.
 
-### 🔥 Breaking Changes
+### Breaking Changes
 
-- **Entry point**: `defineFactory` **removed** → use `createFactory(name)` with `.withSchema()` and `.withValue()`.
-- **Field API**:
-  - **Added**: `.from(...)` (required context reads; transform or no-transform overloads)
-  - **Added**: `.maybeFrom(...)` (optional context reads returning `T | undefined`)
-  - **Changed**: `.default(value | () => value)` is pure (no context argument)
-  - **Removed**: `.dependsOn(...)`, `.optionalDefault(...)`
-- **Fixture helpers**: `useValueFn` → **`useValue`**, `useCreateFn` → **`useCreateValue`**.
-- **Build signature**: `defineFactory(...)(context, attrs)` → **`createFactory(...).build(attrs?, context?)`**.
+- `defineFactory` was removed; use `createFactory(name)` with `.withSchema()` and `.withValue()`.
+- Field API changes:
+  - Added `.from(...)` for required context reads and `.maybeFrom(...)` for optional reads.
+  - `.default(value | () => value)` no longer receives context.
+  - Removed `.dependsOn(...)` and `.optionalDefault(...)`.
+- Renamed fixture helpers: `useValueFn` to `useValue`, and `useCreateFn` to `useCreateValue`.
+- Changed factory builds from `defineFactory(...)(context, attrs)` to `createFactory(...).build(attrs?, context?)`.
 
-## [1.x.x] - Previous Versions
+## [2.0.0-7] - 2025-09-02
 
-v1 used `defineFactory`, passed dependencies into the factory function, and exposed `useValueFn` / `useCreateFn`. See git history for details.
+### Changed
+
+- Renamed `.withFn()` to `.withValue()`.
+
+## [2.0.0-6] - 2025-09-02
+
+### Improved
+
+- Improved errors produced while creating factories.
+
+## [2.0.0-5] - 2025-09-02
+
+### Changed
+
+- Simplified default-value handling in schema factories.
+
+## [2.0.0-4] - 2025-09-02
+
+### Changed
+
+- Replaced `defineFactory` and the field-builder implementation with the `createFactory` and field APIs that underpin v2.
+
+## [2.0.0-3] - 2025-09-02
+
+### Changed
+
+- Improved type definitions and fixture handling; updated linting configuration.
+
+## [2.0.0-2] - 2025-09-01
+
+### Changed
+
+- Refined schema default-value resolution and TypeScript types.
+
+## [2.0.0-1] - 2025-09-01
+
+### Added
+
+- Field-builder default values.
+
+## [2.0.0-0] - 2025-09-01
+
+### Added
+
+- Default attributes when creating factories.
+- The initial v2 field-builder and schema-resolution APIs.
+
+## [1.7.0] - 2025-08-29
+
+### Changed
+
+- Updated Biome and project dependencies.
+
+## [1.6.1] - 2024-12-31
+
+### Added
+
+- Re-exported all public types from the package entry point.
+
+## [1.6.0] - 2024-12-31
+
+### Added
+
+- `InferFixtureValue` type for inferring fixture values.
+- Yes/no environment-variable parsing utility.
+
+## [1.5.0] - 2024-12-31
+
+### Added
+
+- `TFF_SKIP_DESTROY` environment variable to disable automatic fixture destruction.
+- Documentation for resource-cleanup controls.
+
+## [1.4.0] - 2024-12-19
+
+### Added
+
+- Example tests and type-definition improvements.
+
+## [1.3.0] - 2024-12-06
+
+### Changed
+
+- Simplified test setup and improved type consistency.
+
+## [1.2.0] - 2024-12-02
+
+### Documentation
+
+- Expanded README usage examples and formatting.
+
+## [1.1.0] - 2024-11-30
+
+### Changed
+
+- Updated build scripts and added type generation.
+
+## [1.0.0] - 2024-11-30
+
+### Added
+
+- Initial release of `test-fixture-factory`.
