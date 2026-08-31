@@ -166,9 +166,13 @@ type FactoryFixtureFn<Attrs extends object, Value> = (
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
 
+/** Options controlling the lifecycle of fixtures created by a factory. */
 type FactoryOptions = {
-  // if true, the factory will destroy the created values after the test
-  // defaults to true, unless TFF_SKIP_DESTROY env var is set
+  /**
+   * Whether to run fixture teardown after the test.
+   *
+   * @default true, unless the `TFF_SKIP_DESTROY` environment variable is set.
+   */
   shouldDestroy?: boolean
 }
 
@@ -243,6 +247,7 @@ type RequiredKeys<T> = {
 // make a type voidable if it doesn't have any required keys
 type MaybeVoid<T> = RequiredKeys<T> extends never ? T | void : T
 
+/** Extracts the value yielded by a fixture callback or factory fixture method. */
 type InferFixtureValue<T> =
   T extends VitestFixtureFn<infer _Context, infer Value>
     ? Value
