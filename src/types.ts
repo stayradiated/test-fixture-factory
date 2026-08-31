@@ -77,13 +77,16 @@ type MissingField = {
 type DestroyFn = () => Promise<void> | void
 
 /** A Vitest-compatible fixture callback. */
-type VitestFixtureFn<Context, FixtureValue> = (
+type VitestFixtureFn<Context extends object, FixtureValue> = (
   context: object & Context,
   use: (value: FixtureValue) => Promise<void>,
 ) => Promise<void>
 
 /** The result returned by `factory.useValue(...)`. */
-type UseValueFixture<Context, Value> = VitestFixtureFn<Context, Value>
+type UseValueFixture<Context extends object, Value> = VitestFixtureFn<
+  Context,
+  Value
+>
 
 /** Makes a creator's attributes optional when none of their keys is required. */
 type CreateValueInput<Attrs> = MaybeVoid<Attrs>
@@ -102,7 +105,7 @@ type CreateValueFn<Attrs, Value> = (attrs: Attrs) => Promise<Value>
 
 /** The result returned by `factory.useCreateValue(...)`. */
 type UseCreateValueFixture<
-  Context,
+  Context extends object,
   Creator extends CreateValueFn<any, any>,
 > = VitestFixtureFn<Context, Creator>
 
@@ -112,7 +115,11 @@ type UseCreateValueFixture<
  * Each call can provide a different set of preset attributes. Preset keys are
  * optional in the creator that the resulting fixture provides.
  */
-type UseCreateValueFactory<Context, Input extends object, Value> = {
+type UseCreateValueFactory<
+  Context extends object,
+  Input extends object,
+  Value,
+> = {
   <PresetAttrs extends Partial<Input>>(
     presetAttrs: PresetAttrs,
     options?: FactoryOptions,
