@@ -254,6 +254,15 @@ console.log(user.value)
 await user[Symbol.asyncDispose]()
 ```
 
+Use `BuiltFixture<Value>` when a helper needs to expose this disposable result:
+
+```typescript
+import type { BuiltFixture } from 'test-fixture-factory'
+
+const buildUser = (name: string): Promise<BuiltFixture<User>> =>
+  userFactory.build({ name }, { company })
+```
+
 ### Vitest Integration
 
 #### `.useValue(presetAttrs?, options?)`

@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, test } from 'vitest'
 
 import type {
+  BuiltFixture,
   CreateValueFn,
   CreateValueInput,
   InferFixtureValue,
@@ -22,6 +23,20 @@ type UserInput = {
 type UserCreator = CreateValueFn<CreateValueInput<UserInput>, User>
 
 describe('public fixture types', () => {
+  test('names build results', () => {
+    const factory = createFactory<User>('User')
+      .withSchema((f) => ({
+        id: f.type<number>().default(1),
+        name: f.type<string>(),
+        role: f.type<'admin' | 'member'>(),
+      }))
+      .fixture(async ({ id, name, role }, use) => use({ id, name, role }))
+
+    expectTypeOf(factory.build({ name: 'Ada', role: 'admin' })).toEqualTypeOf<
+      Promise<BuiltFixture<User>>
+    >()
+  })
+
   test('infers values from factory methods and fixture results', () => {
     const factory = createFactory<User>('User')
       .withSchema((f) => ({

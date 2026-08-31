@@ -2,6 +2,7 @@ import type { NewFieldBuilder } from './field.js'
 import type {
   AnySchema,
   AnySchemaBuilderWithContext,
+  BuiltFixture,
   DestroyFn,
   EmptySchema,
   FactoryFn,
@@ -88,7 +89,10 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  async build(attrs: VoidableInputOf<Schema>, context: MaybeVoid<Context>) {
+  async build(
+    attrs: VoidableInputOf<Schema>,
+    context: MaybeVoid<Context>,
+  ): Promise<BuiltFixture<Value>> {
     const { name, schema, fixtureFn } = this.state
 
     if (!fixtureFn) {

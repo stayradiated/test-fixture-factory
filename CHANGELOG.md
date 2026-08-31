@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `BuiltFixture`, a public type for annotating disposable `.build()` results.
 - `UseCreateValueFactory`, a public type for exporting the generic
   `factory.useCreateValue` method while preserving call-time preset inference.
 

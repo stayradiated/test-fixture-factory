@@ -1,4 +1,5 @@
 export type {
+  BuiltFixture,
   CreateValueFn,
   CreateValueInput,
   FactoryOptions,

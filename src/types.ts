@@ -72,6 +72,14 @@ type MissingField = {
   fixtureList: string[]
 }
 
+/* BUILT FIXTURE */
+
+/** The disposable result returned by `factory.build(...)`. */
+type BuiltFixture<Value> = {
+  readonly value: Awaited<Value>
+  [Symbol.asyncDispose]: () => Promise<void>
+}
+
 /* VITEST FIXTURE */
 
 type DestroyFn = () => Promise<void> | void
@@ -264,6 +272,7 @@ export type {
   AnySchema,
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
+  BuiltFixture,
   CreateValueFn,
   CreateValueInput,
   DestroyFn,
