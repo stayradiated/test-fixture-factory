@@ -2,11 +2,12 @@ import type { NewFieldBuilder } from './field.js'
 import type {
   AnySchema,
   AnySchemaBuilderWithContext,
+  BuiltFixture,
   DestroyFn,
   EmptySchema,
+  FactoryFixtureFn,
   FactoryFn,
   FactoryOptions,
-  FixtureFn,
   InputOf,
   MaybeVoid,
   OutputOf,
@@ -34,7 +35,7 @@ const defaultFactoryOptions: FactoryOptions = {
 type FactoryState<S extends AnySchema, V> = {
   name: string
   schema: S
-  fixtureFn: FixtureFn<Prettify<OutputOf<S>>, V> | undefined
+  fixtureFn: FactoryFixtureFn<Prettify<OutputOf<S>>, V> | undefined
 }
 
 type CreateFn<Schema extends AnySchema, Value> = (
@@ -81,14 +82,17 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  fixture(fixtureFn: FixtureFn<Prettify<OutputOf<Schema>>, Value>) {
+  fixture(fixtureFn: FactoryFixtureFn<Prettify<OutputOf<Schema>>, Value>) {
     return new FactoryBuilder<Context, Schema, Value>({
       ...this.state,
       fixtureFn,
     })
   }
 
-  async build(attrs: VoidableInputOf<Schema>, context: MaybeVoid<Context>) {
+  async build(
+    attrs: VoidableInputOf<Schema>,
+    context: MaybeVoid<Context>,
+  ): Promise<BuiltFixture<Value>> {
     const { name, schema, fixtureFn } = this.state
 
     if (!fixtureFn) {

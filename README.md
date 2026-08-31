@@ -30,6 +30,31 @@ npm i -D test-fixture-factory
 
 ---
 
+## Development
+
+Repository tasks are run with [just](https://just.systems). Install `just` and
+pnpm, then initialize the checkout with:
+
+```bash
+just install
+```
+
+Common commands:
+
+```bash
+just check                    # type-check the project
+just qa                       # lint, type-check, test, find unused code, build
+just test                     # run all tests
+just test src/field.test.ts   # run a specific test file
+just fix                      # apply Biome fixes
+just build                    # emit dist/ JavaScript and declarations
+```
+
+Run `just` (or `just help`) to list every available recipe. `prepublishOnly`
+uses `just build`, so `just` is required when publishing from a checkout.
+
+---
+
 ## Quickstart
 
 ```typescript
@@ -183,6 +208,20 @@ f.type<string>().maybeFrom('user', (ctx) => ctx.user?.name)
 f.type<string>().maybeFrom('name')
 ```
 
+Chain `.maybeFrom(...)` calls to declare context fallbacks. Sources are tried
+in declaration order; the first value other than `undefined` is used.
+
+```typescript
+// .withContext<{ request?: { workspaceId: string }; workspace?: { id: string } }>
+f
+  .type<string>()
+  .maybeFrom('request', ({ request }) => request?.workspaceId)
+  .maybeFrom('workspace', ({ workspace }) => workspace?.id)
+```
+
+`.from(...)` declares one required context source and cannot be chained. Use
+`.maybeFrom(...)` when a field needs fallback sources.
+
 #### `.fixture(fixtureFn)`
 
 `fixtureFn` receives the fully resolved attributes and a `use` function
@@ -198,6 +237,19 @@ the fixture can cleanup any values it needs to.
   await use(person)
   await deletePerson(person.id)
 })
+```
+
+Use `FactoryFixtureFn<Attrs, Value>` when defining this callback separately:
+
+```typescript
+import type { FactoryFixtureFn } from 'test-fixture-factory'
+
+const userFixture: FactoryFixtureFn<{ name: string }, User> =
+  async ({ name }, use) => {
+    const user = await createUser({ name })
+    await use(user)
+    await deleteUser(user.id)
+  }
 ```
 
 #### `.withValue(factoryFn)` (deprecated)
@@ -254,6 +306,15 @@ console.log(user.value)
 await user[Symbol.asyncDispose]()
 ```
 
+Use `BuiltFixture<Value>` when a helper needs to expose this disposable result:
+
+```typescript
+import type { BuiltFixture } from 'test-fixture-factory'
+
+const buildUser = (name: string): Promise<BuiltFixture<User>> =>
+  userFactory.build({ name }, { company })
+```
+
 ### Vitest Integration
 
 #### `.useValue(presetAttrs?, options?)`
@@ -298,13 +359,19 @@ with the public fixture types to keep the emitted `.d.ts` small and portable.
 import type {
   CreateValueFn,
   CreateValueInput,
+  Factory,
   PresetInput,
+  UseCreateValueFactory,
   UseCreateValueFixture,
   UseValueFixture,
 } from 'test-fixture-factory'
 
 type UserInput = { id?: number; name: string }
 type CreateUser = CreateValueFn<CreateValueInput<UserInput>, User>
+
+// Annotate a completed factory without leaking its internal builder type.
+export const userFactory: Factory<UserContext, UserInput, User> =
+  configuredUserFactory
 
 export const useUser: UseValueFixture<UserContext, User> =
   userFactory.useValue({ name: 'Ada' })
@@ -314,10 +381,18 @@ type CreatePresetUser = CreateValueFn<
   CreateValueInput<PresetInput<UserInput, { name: string }>>,
   User
 >
-export const useCreateUser: UseCreateValueFixture<
+export const useCreatePresetUser: UseCreateValueFixture<
   UserContext,
   CreatePresetUser
 > = userFactory.useCreateValue({ name: 'Ada' })
+
+// To export the generic factory method itself (and preserve inference for
+// different presets at every call), annotate the method rather than a result.
+export const useCreateUser: UseCreateValueFactory<
+  UserContext,
+  UserInput,
+  User
+> = userFactory.useCreateValue
 ```
 
 ---
@@ -425,7 +500,8 @@ Detectable via `err instanceof UndefinedFieldError`.
 `.from` expects a value to be resolvable (via context or attribute override). `.maybeFrom` allows the context read to produce `undefined`; if nothing overrides it, you'll still get an error (because the field is required unless you `.optional()` it).
 
 **Q: Can I read multiple fixtures for one field?**
-Yes — pass an array: `.from(['a','b'], ({ a, b }) => combine(a,b))`.
+Yes — pass an array: `.from(['a','b'], ({ a, b }) => combine(a,b))`. For
+ordered fallback sources, chain `.maybeFrom(...)` calls instead.
 
 **Q: Can `default(() => ...)` read the test context?**
 No. Defaults are pure and receive **no** arguments. If you need context, use `.from(...)` / `.maybeFrom(...)`.

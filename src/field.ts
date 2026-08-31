@@ -21,11 +21,17 @@ class FieldBuilder<
 
   // 1) No-transform allowed only when Context[K] extends Value
   from<K extends KeysAssignableTo<Context, Value>>(
+    this: Flag extends 'from'
+      ? never
+      : FieldBuilder<Context, Fixtures, Value, Flag>,
     keyOrList: OneOrMany<K>,
   ): FieldBuilder<Context, Fixtures | K, Value, 'from'>
 
   // 2) Otherwise, transform is required
   from<K extends keyof Context & string>(
+    this: Flag extends 'from'
+      ? never
+      : FieldBuilder<Context, Fixtures, Value, Flag>,
     keyOrList: OneOrMany<K>,
     getValueFromContext: (ctx: Pick<Context, K>) => Value,
   ): FieldBuilder<Context, Fixtures | K, Value, 'from'>
@@ -72,12 +78,14 @@ class FieldBuilder<
 
     const getValueFromContext =
       fn ?? ((ctx: Pick<Context, K>) => ctx[key] as Value | undefined)
+    const previousGetValueFromContext = this.state.getValueFromContext
 
     return new FieldBuilder<Context, Fixtures | K, Value, 'maybeFrom'>({
       ...this.state,
       isRequired: true,
-      fixtureList,
-      getValueFromContext,
+      fixtureList: [...this.state.fixtureList, ...fixtureList],
+      getValueFromContext: (context) =>
+        previousGetValueFromContext?.(context) ?? getValueFromContext(context),
     })
   }
 

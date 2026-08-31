@@ -72,18 +72,29 @@ type MissingField = {
   fixtureList: string[]
 }
 
+/* BUILT FIXTURE */
+
+/** The disposable result returned by `factory.build(...)`. */
+type BuiltFixture<Value> = {
+  readonly value: Awaited<Value>
+  [Symbol.asyncDispose]: () => Promise<void>
+}
+
 /* VITEST FIXTURE */
 
 type DestroyFn = () => Promise<void> | void
 
 /** A Vitest-compatible fixture callback. */
-type VitestFixtureFn<Context, FixtureValue> = (
-  context: object & Context,
+type VitestFixtureFn<Context extends object, FixtureValue> = (
+  context: Context,
   use: (value: FixtureValue) => Promise<void>,
 ) => Promise<void>
 
 /** The result returned by `factory.useValue(...)`. */
-type UseValueFixture<Context, Value> = VitestFixtureFn<Context, Value>
+type UseValueFixture<Context extends object, Value> = VitestFixtureFn<
+  Context,
+  Value
+>
 
 /** Makes a creator's attributes optional when none of their keys is required. */
 type CreateValueInput<Attrs> = MaybeVoid<Attrs>
@@ -102,9 +113,49 @@ type CreateValueFn<Attrs, Value> = (attrs: Attrs) => Promise<Value>
 
 /** The result returned by `factory.useCreateValue(...)`. */
 type UseCreateValueFixture<
-  Context,
+  Context extends object,
   Creator extends CreateValueFn<any, any>,
 > = VitestFixtureFn<Context, Creator>
+
+/** A configured factory that can build values and declare Vitest fixtures. */
+type Factory<Context extends object, Input extends object, Value> = {
+  build: (
+    attrs: CreateValueInput<Input>,
+    context: MaybeVoid<Context>,
+  ) => Promise<BuiltFixture<Value>>
+  useCreateValue: UseCreateValueFactory<Context, Input, Value>
+  useValue: (
+    attrs: CreateValueInput<Input>,
+    options?: FactoryOptions,
+  ) => UseValueFixture<Context, Value>
+}
+
+/**
+ * The complete generic method exposed as `factory.useCreateValue`.
+ *
+ * Each call can provide a different set of preset attributes. Preset keys are
+ * optional in the creator that the resulting fixture provides.
+ */
+type UseCreateValueFactory<
+  Context extends object,
+  Input extends object,
+  Value,
+> = {
+  <PresetAttrs extends Partial<Input>>(
+    presetAttrs: PresetAttrs,
+    options?: FactoryOptions,
+  ): UseCreateValueFixture<
+    Context,
+    CreateValueFn<CreateValueInput<PresetInput<Input, PresetAttrs>>, Value>
+  >
+  (
+    presetAttrs?: void,
+    options?: FactoryOptions,
+  ): UseCreateValueFixture<
+    Context,
+    CreateValueFn<CreateValueInput<Input>, Value>
+  >
+}
 
 /*
  * @deprecated Use the `use` callback instead of returning a value from the
@@ -122,14 +173,19 @@ type FactoryFn<Attrs extends object, Value> = (
   attrs: Attrs,
 ) => Promise<FactoryResult<Value>> | FactoryResult<Value>
 
-type FixtureFn<Attrs extends object, Value> = (
+/** The callback accepted by `factory.fixture(...)`. */
+type FactoryFixtureFn<Attrs extends object, Value> = (
   attrs: Attrs,
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
 
+/** Options controlling the lifecycle of fixtures created by a factory. */
 type FactoryOptions = {
-  // if true, the factory will destroy the created values after the test
-  // defaults to true, unless TFF_SKIP_DESTROY env var is set
+  /**
+   * Whether to run fixture teardown after the test.
+   *
+   * @default true, unless the `TFF_SKIP_DESTROY` environment variable is set.
+   */
   shouldDestroy?: boolean
 }
 
@@ -204,12 +260,17 @@ type RequiredKeys<T> = {
 // make a type voidable if it doesn't have any required keys
 type MaybeVoid<T> = RequiredKeys<T> extends never ? T | void : T
 
-type InferFixtureValue<T> = T extends () => VitestFixtureFn<
-  infer _Deps,
-  infer Value
->
-  ? Value
-  : never
+/** Extracts the value yielded by a fixture callback or factory fixture method. */
+type InferFixtureValue<T> =
+  T extends VitestFixtureFn<infer _Context, infer Value>
+    ? Value
+    : T extends () => VitestFixtureFn<infer _Context, infer Value>
+      ? Value
+      : T extends (
+            ...args: any[]
+          ) => VitestFixtureFn<infer _Context, infer Value>
+        ? Value
+        : never
 
 // If you want to work with the Schema type directly
 type SetSchemaFieldsOptional<
@@ -230,15 +291,17 @@ export type {
   AnySchema,
   AnySchemaBuilderWithContext,
   AnySchemaWithContext,
+  BuiltFixture,
   CreateValueFn,
   CreateValueInput,
   DestroyFn,
   EmptySchema,
+  Factory,
+  FactoryFixtureFn,
   FactoryFn,
   FactoryOptions,
   Field,
   FieldOf,
-  FixtureFn,
   FlagOf,
   InferFixtureValue,
   InputOf,
@@ -254,6 +317,7 @@ export type {
   RequiredOutputKeysOf,
   SchemaOf,
   SetSchemaFieldsOptional,
+  UseCreateValueFactory,
   UseCreateValueFixture,
   UseValueFixture,
   ValueOf,
