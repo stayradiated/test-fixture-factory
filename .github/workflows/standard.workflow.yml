@@ -21,6 +21,10 @@ jobs:
         name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - # https://github.com/extractions/setup-just
+        name: Install just
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3.1.0
+
       - # https://github.com/pnpm/action-setup
         name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -38,13 +42,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Biome
-        run: pnpm run tidy:check
+        run: just lint
 
-      - name: Typescript
-        run: pnpm run tsc
+      - name: TypeScript
+        run: just check
 
       - name: Knip
-        run: pnpm run knip
+        run: just knip
 
       - name: Vitest
-        run: pnpm run test
+        run: just test
