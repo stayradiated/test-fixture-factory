@@ -200,6 +200,19 @@ the fixture can cleanup any values it needs to.
 })
 ```
 
+Use `FactoryFixtureFn<Attrs, Value>` when defining this callback separately:
+
+```typescript
+import type { FactoryFixtureFn } from 'test-fixture-factory'
+
+const userFixture: FactoryFixtureFn<{ name: string }, User> =
+  async ({ name }, use) => {
+    const user = await createUser({ name })
+    await use(user)
+    await deleteUser(user.id)
+  }
+```
+
 #### `.withValue(factoryFn)` (deprecated)
 
 This has been replaced by the `.fixture()` method (with an API similar to

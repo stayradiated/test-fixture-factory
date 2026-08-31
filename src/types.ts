@@ -160,7 +160,8 @@ type FactoryFn<Attrs extends object, Value> = (
   attrs: Attrs,
 ) => Promise<FactoryResult<Value>> | FactoryResult<Value>
 
-type FixtureFn<Attrs extends object, Value> = (
+/** The callback accepted by `factory.fixture(...)`. */
+type FactoryFixtureFn<Attrs extends object, Value> = (
   attrs: Attrs,
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
@@ -277,11 +278,11 @@ export type {
   CreateValueInput,
   DestroyFn,
   EmptySchema,
+  FactoryFixtureFn,
   FactoryFn,
   FactoryOptions,
   Field,
   FieldOf,
-  FixtureFn,
   FlagOf,
   InferFixtureValue,
   InputOf,

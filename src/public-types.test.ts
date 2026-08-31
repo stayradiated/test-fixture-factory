@@ -4,6 +4,7 @@ import type {
   BuiltFixture,
   CreateValueFn,
   CreateValueInput,
+  FactoryFixtureFn,
   InferFixtureValue,
   PresetInput,
   UseCreateValueFactory,
@@ -23,6 +24,25 @@ type UserInput = {
 type UserCreator = CreateValueFn<CreateValueInput<UserInput>, User>
 
 describe('public fixture types', () => {
+  test('names factory fixture callbacks', () => {
+    const fixtureFn: FactoryFixtureFn<
+      { id: number; name: string; role: 'admin' | 'member' },
+      User
+    > = async ({ id, name, role }, use) => use({ id, name, role })
+
+    const factory = createFactory<User>('User')
+      .withSchema((f) => ({
+        id: f.type<number>().default(1),
+        name: f.type<string>(),
+        role: f.type<'admin' | 'member'>(),
+      }))
+      .fixture(fixtureFn)
+
+    expectTypeOf(
+      factory.useValue({ name: 'Ada', role: 'admin' }),
+    ).toEqualTypeOf<UseValueFixture<object, User>>()
+  })
+
   test('names build results', () => {
     const factory = createFactory<User>('User')
       .withSchema((f) => ({

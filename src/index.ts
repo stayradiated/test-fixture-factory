@@ -2,6 +2,7 @@ export type {
   BuiltFixture,
   CreateValueFn,
   CreateValueInput,
+  FactoryFixtureFn,
   FactoryOptions,
   InferFixtureValue,
   PresetInput,
