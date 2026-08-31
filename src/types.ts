@@ -117,6 +117,19 @@ type UseCreateValueFixture<
   Creator extends CreateValueFn<any, any>,
 > = VitestFixtureFn<Context, Creator>
 
+/** A configured factory that can build values and declare Vitest fixtures. */
+type Factory<Context extends object, Input extends object, Value> = {
+  build: (
+    attrs: CreateValueInput<Input>,
+    context: MaybeVoid<Context>,
+  ) => Promise<BuiltFixture<Value>>
+  useCreateValue: UseCreateValueFactory<Context, Input, Value>
+  useValue: (
+    attrs: CreateValueInput<Input>,
+    options?: FactoryOptions,
+  ) => UseValueFixture<Context, Value>
+}
+
 /**
  * The complete generic method exposed as `factory.useCreateValue`.
  *
@@ -283,6 +296,7 @@ export type {
   CreateValueInput,
   DestroyFn,
   EmptySchema,
+  Factory,
   FactoryFixtureFn,
   FactoryFn,
   FactoryOptions,

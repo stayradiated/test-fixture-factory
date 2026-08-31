@@ -11,10 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Factory`, a public type for annotating configured factories without exposing
+  internal builder types.
 - `BuiltFixture`, a public type for annotating disposable `.build()` results.
 - `FactoryFixtureFn`, a public type for callbacks passed to `.fixture()`.
 - `UseCreateValueFactory`, a public type for exporting the generic
   `factory.useCreateValue` method while preserving call-time preset inference.
+
+### Fixed
+
+- Chained `.maybeFrom(...)` calls now try context sources in declaration order,
+  allowing later calls to act as fallbacks.
+- TypeScript now rejects chained `.from(...)` calls, which cannot provide a
+  required context value with a fallback.
 
 ## [2.2.0] - 2026-08-30
 

@@ -5,6 +5,7 @@ export default defineConfig({
   format: ['esm'],
   clean: true,
   target: 'node22',
+  tsconfig: './tsconfig.build.json',
   dts: true,
   outExtensions: () => ({ js: '.js', dts: '.d.ts' }),
 })

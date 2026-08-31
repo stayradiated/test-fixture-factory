@@ -12,13 +12,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "prepublishOnly": "$npm_execpath run build",
-    "build": "tsdown",
-    "test": "vitest --watch=false",
-    "tidy": "biome check --fix --unsafe",
-    "tidy:check": "biome check",
-    "tsc": "tsc --incremental",
-    "knip": "knip"
+    "prepublishOnly": "just build"
   },
   "keywords": [
     "dependency-management",
