@@ -86,7 +86,7 @@ type DestroyFn = () => Promise<void> | void
 
 /** A Vitest-compatible fixture callback. */
 type VitestFixtureFn<Context extends object, FixtureValue> = (
-  context: object & Context,
+  context: Context,
   use: (value: FixtureValue) => Promise<void>,
 ) => Promise<void>
 
