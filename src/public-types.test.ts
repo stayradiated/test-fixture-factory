@@ -3,6 +3,7 @@ import { describe, expectTypeOf, test } from 'vitest'
 import type {
   CreateValueFn,
   CreateValueInput,
+  InferFixtureValue,
   PresetInput,
   UseCreateValueFactory,
   UseCreateValueFixture,
@@ -21,6 +22,26 @@ type UserInput = {
 type UserCreator = CreateValueFn<CreateValueInput<UserInput>, User>
 
 describe('public fixture types', () => {
+  test('infers values from factory methods and fixture results', () => {
+    const factory = createFactory<User>('User')
+      .withSchema((f) => ({
+        id: f.type<number>().default(1),
+        name: f.type<string>(),
+        role: f.type<'admin' | 'member'>(),
+      }))
+      .fixture(async ({ id, name, role }, use) => use({ id, name, role }))
+
+    const fixture = factory.useValue({ name: 'Ada', role: 'admin' })
+
+    expectTypeOf<
+      InferFixtureValue<typeof factory.useValue>
+    >().toEqualTypeOf<User>()
+    expectTypeOf<
+      InferFixtureValue<typeof factory.useCreateValue>
+    >().toEqualTypeOf<UserCreator>()
+    expectTypeOf<InferFixtureValue<typeof fixture>>().toEqualTypeOf<User>()
+  })
+
   test('names useValue and useCreateValue results with required input', () => {
     const factory = createFactory<User>('User')
       .withSchema((f) => ({

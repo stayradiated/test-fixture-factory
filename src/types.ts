@@ -227,12 +227,16 @@ type RequiredKeys<T> = {
 // make a type voidable if it doesn't have any required keys
 type MaybeVoid<T> = RequiredKeys<T> extends never ? T | void : T
 
-type InferFixtureValue<T> = T extends () => VitestFixtureFn<
-  infer _Deps,
-  infer Value
->
-  ? Value
-  : never
+type InferFixtureValue<T> =
+  T extends VitestFixtureFn<infer _Context, infer Value>
+    ? Value
+    : T extends () => VitestFixtureFn<infer _Context, infer Value>
+      ? Value
+      : T extends (
+            ...args: any[]
+          ) => VitestFixtureFn<infer _Context, infer Value>
+        ? Value
+        : never
 
 // If you want to work with the Schema type directly
 type SetSchemaFieldsOptional<
