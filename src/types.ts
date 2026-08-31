@@ -106,6 +106,29 @@ type UseCreateValueFixture<
   Creator extends CreateValueFn<any, any>,
 > = VitestFixtureFn<Context, Creator>
 
+/**
+ * The complete generic method exposed as `factory.useCreateValue`.
+ *
+ * Each call can provide a different set of preset attributes. Preset keys are
+ * optional in the creator that the resulting fixture provides.
+ */
+type UseCreateValueFactory<Context, Input extends object, Value> = {
+  <PresetAttrs extends Partial<Input>>(
+    presetAttrs: PresetAttrs,
+    options?: FactoryOptions,
+  ): UseCreateValueFixture<
+    Context,
+    CreateValueFn<CreateValueInput<PresetInput<Input, PresetAttrs>>, Value>
+  >
+  (
+    presetAttrs?: void,
+    options?: FactoryOptions,
+  ): UseCreateValueFixture<
+    Context,
+    CreateValueFn<CreateValueInput<Input>, Value>
+  >
+}
+
 /*
  * @deprecated Use the `use` callback instead of returning a value from the
  * factory function.
@@ -254,6 +277,7 @@ export type {
   RequiredOutputKeysOf,
   SchemaOf,
   SetSchemaFieldsOptional,
+  UseCreateValueFactory,
   UseCreateValueFixture,
   UseValueFixture,
   ValueOf,

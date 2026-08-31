@@ -299,6 +299,7 @@ import type {
   CreateValueFn,
   CreateValueInput,
   PresetInput,
+  UseCreateValueFactory,
   UseCreateValueFixture,
   UseValueFixture,
 } from 'test-fixture-factory'
@@ -314,10 +315,18 @@ type CreatePresetUser = CreateValueFn<
   CreateValueInput<PresetInput<UserInput, { name: string }>>,
   User
 >
-export const useCreateUser: UseCreateValueFixture<
+export const useCreatePresetUser: UseCreateValueFixture<
   UserContext,
   CreatePresetUser
 > = userFactory.useCreateValue({ name: 'Ada' })
+
+// To export the generic factory method itself (and preserve inference for
+// different presets at every call), annotate the method rather than a result.
+export const useCreateUser: UseCreateValueFactory<
+  UserContext,
+  UserInput,
+  User
+> = userFactory.useCreateValue
 ```
 
 ---

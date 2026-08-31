@@ -4,6 +4,7 @@ import type {
   CreateValueFn,
   CreateValueInput,
   PresetInput,
+  UseCreateValueFactory,
   UseCreateValueFixture,
   UseValueFixture,
   VitestFixtureFn,
@@ -38,6 +39,57 @@ describe('public fixture types', () => {
 
     expectTypeOf(useValue).toEqualTypeOf<VitestFixtureFn<object, User>>()
     expectTypeOf(useCreate).toEqualTypeOf<
+      UseCreateValueFixture<object, UserCreator>
+    >()
+  })
+
+  test('names the generic useCreateValue method for direct exports', () => {
+    const factory = createFactory<User>('User')
+      .withSchema((f) => ({
+        id: f.type<number>().default(1),
+        name: f.type<string>(),
+        role: f.type<'admin' | 'member'>(),
+      }))
+      .fixture(async ({ id, name, role }, use) => use({ id, name, role }))
+
+    const useCreateUser: UseCreateValueFactory<object, UserInput, User> =
+      factory.useCreateValue
+
+    const noPreset = useCreateUser()
+    const onePreset = useCreateUser({ name: 'Ada' })
+    const allRequiredPreset = useCreateUser({ name: 'Ada', role: 'admin' })
+    const withOptions = useCreateUser(undefined, { shouldDestroy: false })
+
+    expectTypeOf(noPreset).toEqualTypeOf<
+      UseCreateValueFixture<object, UserCreator>
+    >()
+    expectTypeOf(onePreset).toEqualTypeOf<
+      UseCreateValueFixture<
+        object,
+        CreateValueFn<
+          CreateValueInput<{
+            id?: number | undefined
+            name?: string | undefined
+            role: 'admin' | 'member'
+          }>,
+          User
+        >
+      >
+    >()
+    expectTypeOf(allRequiredPreset).toEqualTypeOf<
+      UseCreateValueFixture<
+        object,
+        CreateValueFn<
+          CreateValueInput<{
+            id?: number | undefined
+            name?: string | undefined
+            role?: 'admin' | 'member' | undefined
+          }>,
+          User
+        >
+      >
+    >()
+    expectTypeOf(withOptions).toEqualTypeOf<
       UseCreateValueFixture<object, UserCreator>
     >()
   })
@@ -103,6 +155,7 @@ describe('public fixture types', () => {
       CreateValueInput<{
         accountId?: number | undefined
         locale?: string | undefined
+        note?: string | undefined
       }>,
       Value
     >
@@ -113,11 +166,20 @@ describe('public fixture types', () => {
           .type<number>()
           .from('account', ({ account }) => account.id),
         locale: f.type<string>().maybeFrom('locale'),
+        note: f.type<string>().optional(),
       }))
       .fixture(async ({ accountId, locale }, use) => use({ accountId, locale }))
 
-    const useCreate: UseCreateValueFixture<Context, ContextCreator> =
-      factory.useCreateValue()
+    const useCreateContextual: UseCreateValueFactory<
+      Context,
+      {
+        accountId?: number | undefined
+        locale?: string | undefined
+        note?: string | undefined
+      },
+      Value
+    > = factory.useCreateValue
+    const useCreate = useCreateContextual(undefined, { shouldDestroy: true })
 
     expectTypeOf(useCreate).toEqualTypeOf<
       UseCreateValueFixture<Context, ContextCreator>
