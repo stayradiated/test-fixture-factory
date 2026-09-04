@@ -1,4 +1,11 @@
+/.jj
+/.pi
 /biome.json
+/justfile
+/knip.json
+/pnpm-workspace.yaml
+/tsconfig.build.json
+/tsdown.config.ts
 /pnpm-lock.yaml
 /src
 /tsconfig.json

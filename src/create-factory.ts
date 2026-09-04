@@ -3,11 +3,8 @@ import type {
   AnySchema,
   AnySchemaBuilderWithContext,
   BuiltFixture,
-  DestroyFn,
   EmptySchema,
   FactoryFixtureFn,
-  FactoryFn,
-  FactoryOptions,
   InputOf,
   MaybeVoid,
   OutputOf,
@@ -19,7 +16,6 @@ import type {
   VoidableInputOf,
 } from './types.js'
 
-import { SKIP_DESTROY } from './env-var.js'
 import {
   createSchema,
   resolveSchema,
@@ -27,10 +23,6 @@ import {
 } from './schema-utils.js'
 import { UndefinedFieldError } from './undefined-field-error.js'
 import { wrapFixtureFn } from './wrap-fixture-fn.js'
-
-const defaultFactoryOptions: FactoryOptions = {
-  shouldDestroy: !SKIP_DESTROY,
-}
 
 type FactoryState<S extends AnySchema, V> = {
   name: string
@@ -65,23 +57,6 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  /*
-   * @deprecated
-   * use .fixture() instead
-   */
-  withValue<NextValue>(
-    factoryFn: FactoryFn<Prettify<OutputOf<Schema>>, NextValue>,
-  ) {
-    return new FactoryBuilder<Context, Schema, NextValue>({
-      ...this.state,
-      fixtureFn: async (attrs, use) => {
-        const { value, destroy } = await factoryFn(attrs)
-        await use(value)
-        destroy?.()
-      },
-    })
-  }
-
   fixture(fixtureFn: FactoryFixtureFn<Prettify<OutputOf<Schema>>, Value>) {
     return new FactoryBuilder<Context, Schema, Value>({
       ...this.state,
@@ -96,7 +71,7 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { name, schema, fixtureFn } = this.state
 
     if (!fixtureFn) {
-      throw new Error('.withValue() must be called before .build()')
+      throw new Error('.fixture() must be called before .build()')
     }
 
     const data = resolveSchema(schema, context ?? {}, attrs)
@@ -131,7 +106,6 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     PresetAttrs extends void | undefined | Partial<InputOf<Schema>>,
   >(
     presetAttrs?: PresetAttrs,
-    { shouldDestroy }: FactoryOptions = defaultFactoryOptions,
   ): UseCreateValueFixture<
     Context,
     CreateFn<
@@ -142,11 +116,11 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     const { name, schema, fixtureFn } = this.state
 
     if (!fixtureFn) {
-      throw new Error('.withValue() must be called before .useCreateValue()')
+      throw new Error('.fixture() must be called before .useCreateValue()')
     }
 
     return wrapFixtureFn(schema, async (context, use) => {
-      const destroyList: DestroyFn[] = []
+      const destroyList: Array<() => Promise<void>> = []
 
       await use((async (attrs) => {
         // Merge preset attributes with provided attributes
@@ -171,19 +145,8 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
         const factoryPromise = fixtureFn(data, useFn)
 
         destroyList.push(async () => {
-          if (shouldDestroy) {
-            blockUntilDispose.resolve()
-            await factoryPromise
-          } else {
-            try {
-              blockUntilDispose.reject(
-                new Error('[test-fixture-factory] Skipping test cleanup'),
-              )
-              await factoryPromise
-            } catch {
-              // ignore
-            }
-          }
+          blockUntilDispose.resolve()
+          await factoryPromise
         })
 
         const value = await blockUntilValue.promise
@@ -199,15 +162,11 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
     })
   }
 
-  useValue(
-    attrs: VoidableInputOf<Schema>,
-    options: FactoryOptions = defaultFactoryOptions,
-  ): UseValueFixture<Context, Value> {
+  useValue(attrs: VoidableInputOf<Schema>): UseValueFixture<Context, Value> {
     const { name, schema, fixtureFn } = this.state
-    const { shouldDestroy } = options
 
     if (!fixtureFn) {
-      throw new Error('.withValue() must be called before .useValue()')
+      throw new Error('.fixture() must be called before .useValue()')
     }
 
     return wrapFixtureFn(schema, async (context, use) => {
@@ -230,19 +189,8 @@ class FactoryBuilder<Context extends object, Schema extends AnySchema, Value> {
       const value = await blockUntilValue.promise
       await use(value)
 
-      if (shouldDestroy) {
-        blockUntilDispose.resolve()
-        await factoryPromise
-      } else {
-        try {
-          blockUntilDispose.reject(
-            new Error('[test-fixture-factory] Skipping test cleanup'),
-          )
-          await factoryPromise
-        } catch {
-          // ignore
-        }
-      }
+      blockUntilDispose.resolve()
+      await factoryPromise
     })
   }
 }

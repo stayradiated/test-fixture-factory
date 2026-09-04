@@ -187,24 +187,6 @@ test('with dependencies and attributes', async ({ expect }) => {
   expect(state.isDestroyed).toBe(true)
 })
 
-test('should not destroy values if shouldDestroy is false', async ({
-  expect,
-}) => {
-  const { factory, state } = getFactory()
-
-  const useCreate = factory.useCreateValue({}, { shouldDestroy: false })
-
-  await useCreate({}, async (create) => {
-    const result = await create()
-    expect(result).toStrictEqual({ name: 'Unknown', accountId: -1 })
-
-    expect(state.isDestroyed).toBe(false)
-  })
-
-  // should not be destroyed
-  expect(state.isDestroyed).toBe(false)
-})
-
 test('without dependencies or attributes', async ({ expect }) => {
   const { factory, state } = getFactory()
 
@@ -257,23 +239,6 @@ test('with dependencies and attributes', async ({ expect }) => {
   })
 
   expect(state.isDestroyed).toBe(true)
-})
-
-test('should not destroy values if shouldDestroy is false', async ({
-  expect,
-}) => {
-  const { factory, state } = getFactory()
-
-  const useValue = factory.useValue({}, { shouldDestroy: false })
-
-  await useValue({}, async (value) => {
-    expect(value).toStrictEqual({ name: 'Unknown', accountId: -1 })
-
-    expect(state.isDestroyed).toBe(false)
-  })
-
-  // should not be destroyed
-  expect(state.isDestroyed).toBe(false)
 })
 
 type Account = {
