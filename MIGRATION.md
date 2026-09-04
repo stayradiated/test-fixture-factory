@@ -6,6 +6,34 @@ This is a **practical, step-by-step guide** for migrating your existing test-fix
 
 This guide focuses on the **how**—with concrete examples and fixes for common migration issues.
 
+## Migrating from v2 to v3
+
+Version 3 removes the deprecated `.withValue()` API. Replace callbacks that
+return `{ value, destroy }` with `.fixture()` callbacks, yield the value via
+`await use(value)`, and run cleanup afterward:
+
+```ts
+// v2
+.withValue(async (attrs) => {
+  const user = await createUser(attrs)
+  return {
+    value: user,
+    destroy: () => deleteUser(user.id),
+  }
+})
+
+// v3
+.fixture(async (attrs, use) => {
+  const user = await createUser(attrs)
+  await use(user)
+  await deleteUser(user.id)
+})
+```
+
+The `shouldDestroy` fixture option and `TFF_SKIP_DESTROY` environment variable
+have also been removed. Fixture teardown always runs; move any resources that
+must outlive a fixture outside of its fixture callback.
+
 ## Overview of Changes
 
 ### Key Differences
@@ -64,12 +92,10 @@ const companyFactory = createFactory('Company')
   .withSchema((f) => ({
     name: f.type<string>(),
   }))
-  .withValue(async ({ name }) => {
+  .fixture(async ({ name }, use) => {
     const company = await prisma.company.create({ data: { name } });
-    return {
-      value: company,
-      destroy: () => prisma.company.delete({ where: { id: company.id } }),
-    };
+    await use(company);
+    await prisma.company.delete({ where: { id: company.id } });
   });
 
 export const { useValue: useCompany, useCreateValue: useCreateCompany } = companyFactory;
@@ -108,9 +134,10 @@ const userFactory = createFactory('User')
     name: f.type<string>(),
     email: f.type<string>(),
   }))
-  .withValue(async ({ companyId, name, email }) => {
+  .fixture(async ({ companyId, name, email }, use) => {
     const user = await prisma.user.create({ data: { companyId, name, email } });
-    return { value: user, destroy: () => prisma.user.delete({ where: { id: user.id } }) };
+    await use(user);
+    await prisma.user.delete({ where: { id: user.id } });
   });
 ```
 
@@ -146,9 +173,9 @@ const productFactory = createFactory('Product')
     price: f.type<number>().default(99.99),
     active: f.type<boolean>().default(true),
   }))
-  .withValue(async ({ name, price, active }) => {
+  .fixture(async ({ name, price, active }, use) => {
     const product = await prisma.product.create({ data: { name, price, active } });
-    return { value: product };
+    await use(product);
   });
 ```
 
@@ -191,11 +218,11 @@ const orderFactory = createFactory('Order')
       .maybeFrom('product', ({ product }) => product?.id)
       .optional(),
   }))
-  .withValue(async ({ companyId, userId, amount, productId }) => {
+  .fixture(async ({ companyId, userId, amount, productId }, use) => {
     const order = await prisma.order.create({
       data: { companyId, userId, amount, productId },
     });
-    return { value: order };
+    await use(order);
   });
 ```
 
@@ -203,7 +230,7 @@ const orderFactory = createFactory('Order')
 
 In v1 you might compute a default based on another **attribute**. In v2, defaults are pure. Do one of:
 
-* Mark the field **optional** and compute inside `.withValue(...)`, or
+* Mark the field **optional** and compute inside `.fixture(...)`, or
 * Require it and let callers pass it.
 
 **Before (v1):**
@@ -226,10 +253,10 @@ const accountFactory = createFactory('Account')
     email: f.type<string>(),
     username: f.type<string>().optional(), // optional in input
   }))
-  .withValue(async ({ email, username }) => {
+  .fixture(async ({ email, username }, use) => {
     const finalUsername = username ?? email.split('@')[0];
     const account = await createAccount({ email, username: finalUsername });
-    return { value: account };
+    await use(account);
   });
 ```
 

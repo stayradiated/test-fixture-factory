@@ -82,8 +82,6 @@ type BuiltFixture<Value> = {
 
 /* VITEST FIXTURE */
 
-type DestroyFn = () => Promise<void> | void
-
 /** A Vitest-compatible fixture callback. */
 type VitestFixtureFn<Context extends object, FixtureValue> = (
   context: Context,
@@ -124,10 +122,7 @@ type Factory<Context extends object, Input extends object, Value> = {
     context: MaybeVoid<Context>,
   ) => Promise<BuiltFixture<Value>>
   useCreateValue: UseCreateValueFactory<Context, Input, Value>
-  useValue: (
-    attrs: CreateValueInput<Input>,
-    options?: FactoryOptions,
-  ) => UseValueFixture<Context, Value>
+  useValue: (attrs: CreateValueInput<Input>) => UseValueFixture<Context, Value>
 }
 
 /**
@@ -143,51 +138,23 @@ type UseCreateValueFactory<
 > = {
   <PresetAttrs extends Partial<Input>>(
     presetAttrs: PresetAttrs,
-    options?: FactoryOptions,
   ): UseCreateValueFixture<
     Context,
     CreateValueFn<CreateValueInput<PresetInput<Input, PresetAttrs>>, Value>
   >
   (
     presetAttrs?: void,
-    options?: FactoryOptions,
   ): UseCreateValueFixture<
     Context,
     CreateValueFn<CreateValueInput<Input>, Value>
   >
 }
 
-/*
- * @deprecated Use the `use` callback instead of returning a value from the
- * factory function.
- */
-type FactoryResult<Value> = {
-  value: Value
-  destroy?: DestroyFn
-}
-
-/*
- * @deprecated
- */
-type FactoryFn<Attrs extends object, Value> = (
-  attrs: Attrs,
-) => Promise<FactoryResult<Value>> | FactoryResult<Value>
-
 /** The callback accepted by `factory.fixture(...)`. */
 type FactoryFixtureFn<Attrs extends object, Value> = (
   attrs: Attrs,
   use: (value: Value) => Promise<void>,
 ) => Promise<void>
-
-/** Options controlling the lifecycle of fixtures created by a factory. */
-type FactoryOptions = {
-  /**
-   * Whether to run fixture teardown after the test.
-   *
-   * @default true, unless the `TFF_SKIP_DESTROY` environment variable is set.
-   */
-  shouldDestroy?: boolean
-}
 
 /* SCHEMA FIELD HELPERS */
 
@@ -294,12 +261,9 @@ export type {
   BuiltFixture,
   CreateValueFn,
   CreateValueInput,
-  DestroyFn,
   EmptySchema,
   Factory,
   FactoryFixtureFn,
-  FactoryFn,
-  FactoryOptions,
   Field,
   FieldOf,
   FlagOf,

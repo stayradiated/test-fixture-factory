@@ -128,7 +128,6 @@ test('names the generic useCreateValue method for direct exports', () => {
   const noPreset = useCreateUser()
   const onePreset = useCreateUser({ name: 'Ada' })
   const allRequiredPreset = useCreateUser({ name: 'Ada', role: 'admin' })
-  const withOptions = useCreateUser(undefined, { shouldDestroy: false })
 
   expectTypeOf(noPreset).toEqualTypeOf<
     UseCreateValueFixture<object, UserCreator>
@@ -158,9 +157,6 @@ test('names the generic useCreateValue method for direct exports', () => {
         User
       >
     >
-  >()
-  expectTypeOf(withOptions).toEqualTypeOf<
-    UseCreateValueFixture<object, UserCreator>
   >()
 })
 
@@ -247,7 +243,7 @@ test('preserves from and maybeFrom fixture context', () => {
     },
     Value
   > = factory.useCreateValue
-  const useCreate = useCreateContextual(undefined, { shouldDestroy: true })
+  const useCreate = useCreateContextual()
 
   expectTypeOf(useCreate).toEqualTypeOf<
     UseCreateValueFixture<Context, ContextCreator>

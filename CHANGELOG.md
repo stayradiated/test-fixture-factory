@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-04
+
+### Breaking Changes
+
+- Removed deprecated `.withValue()` and its associated legacy callback types.
+  Use `.fixture((attrs, use) => ...)` instead.
+- Removed `shouldDestroy` options and the `TFF_SKIP_DESTROY` environment
+  variable. Fixture teardown now always runs.
+
 ## [2.3.0] - 2026-08-31
 
 ### Added

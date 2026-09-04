@@ -4,7 +4,6 @@ export type {
   CreateValueInput,
   Factory,
   FactoryFixtureFn,
-  FactoryOptions,
   InferFixtureValue,
   PresetInput,
   UseCreateValueFactory,

@@ -4,7 +4,7 @@
 
 * ✅ **First-class TypeScript**: schema-driven, end-to-end inference
 * ✅ **Explicit context reads**: `.from()` / `.maybeFrom()` link fields to fixtures on the test context
-* ✅ **Lifecycle control**: auto-destroy by default, opt-out via env or per-fixture
+* ✅ **Automatic cleanup**: fixtures always run teardown after use
 * ✅ **Great DX**: actionable errors (with factory names and missing fields)
 
 > Works best with [Vitest Test Contexts](https://vitest.dev/guide/test-context.html). It can also be used outside Vitest via `factory.build(...)` for ad-hoc creation.
@@ -252,27 +252,6 @@ const userFixture: FactoryFixtureFn<{ name: string }, User> =
   }
 ```
 
-#### `.withValue(factoryFn)` (deprecated)
-
-This has been replaced by the `.fixture()` method (with an API similar to
-Vitest).
-
-To avoid breaking changes, you can continue using `withValue`.
-
-The `factoryFn` callback receives the fully resolved attributes and should return an object `{ value, destroy? }`.
-
-```typescript
-.withValue(async (attrs) => {
-  const person = await createPerson()
-  return {
-    value: person,
-    destroy: async () => {
-      await destroyPerson(person.id)
-    }
-  }
-})
-```
-
 #### `.build(attrs?, context?)`
 
 Create a value **outside of Vitest**. Useful for scripts or setup code.
@@ -317,7 +296,7 @@ const buildUser = (name: string): Promise<BuiltFixture<User>> =>
 
 ### Vitest Integration
 
-#### `.useValue(presetAttrs?, options?)`
+#### `.useValue(attrs?)`
 
 Return a Vitest fixture that yields **one instance**.
 
@@ -327,7 +306,7 @@ const test = anyTest.extend({
 })
 ```
 
-#### `.useCreateValue(presetAttrs?, options?)`
+#### `.useCreateValue(presetAttrs?)`
 
 Return a Vitest fixture that yields a **creator function** for many instances.
 
@@ -341,12 +320,6 @@ test('batch', async ({ createUser }) => {
   const b = await createUser({ name: 'Bob' })
   // ...
 })
-```
-
-**Options**
-
-```typescript
-{ shouldDestroy?: boolean } // default true unless TFF_SKIP_DESTROY is truthy
 ```
 
 ### Portable fixture type annotations
@@ -447,16 +420,6 @@ This pattern is useful for:
 - Creating reusable test data setup functions
 - Maintaining type safety across test helpers
 - Reducing duplication in test setup code
-
-### Environment Variables
-
-Disable auto-destroy globally while developing:
-
-```bash
-TFF_SKIP_DESTROY=1 vitest
-```
-
----
 
 ## Best Practices
 
